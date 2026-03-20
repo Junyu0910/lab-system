@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xu Lab · Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Base ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#EDE8E0;font-family:'DM Sans',sans-serif;min-height:100vh}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#D9CFBF;border-radius:3px}
+
+/* ── Layout ── */
+.shell{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.app{width:100%;max-width:1200px;background:#FDFAF6;border-radius:28px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,.14);display:flex;min-height:720px}
+.sidebar{width:68px;background:#1A1410;display:flex;flex-direction:column;align-items:center;padding:20px 0;gap:4px;flex-shrink:0}
+.logo{width:38px;height:38px;background:#E8C547;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:16px}
+.nav-btn{width:42px;height:42px;border-radius:10px;border:none;cursor:pointer;background:transparent;color:#8C7B6B;display:flex;align-items:center;justify-content:center;transition:all .15s;font-size:18px;position:relative}
+.nav-btn.active{background:#E8C547;color:#1A1410}
+.nav-btn:hover:not(.active){background:rgba(255,255,255,.08);color:#D9CFBF}
+.nav-tooltip{position:absolute;left:52px;background:#1A1410;border:1px solid #2E2318;color:#F5F0E8;font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:100}
+.nav-btn:hover .nav-tooltip{opacity:1}
+.trash-badge{position:absolute;top:6px;right:6px;background:#FF7E5F;color:#fff;font-size:9px;font-weight:700;min-width:14px;height:14px;border-radius:7px;display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{padding:18px 28px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #EDE8E0;flex-shrink:0}
+.topbar-left .lab-name{font-family:'DM Serif Display',serif;font-size:16px;color:#1A1410}
+.topbar-left .lab-sub{font-size:12px;color:#8C7B6B;margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.date-chip{background:#F0EBE2;border-radius:10px;padding:7px 14px;font-size:12px;color:#8C7B6B;font-family:'DM Mono',monospace}
+.user-avatar{width:34px;height:34px;border-radius:50%;background:#E8C547;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:#1A1410;font-weight:700;cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:28px}
+
+/* ── Setup Banner ── */
+.setup-banner{background:#FFF8E6;border:1.5px solid #E8C547;border-radius:14px;padding:16px 20px;margin-bottom:24px;font-size:13px;color:#8C5E0A;line-height:1.7}
+.setup-banner strong{display:block;margin-bottom:4px;font-size:14px}
+.setup-banner code{background:#E8C54733;border-radius:4px;padding:1px 6px;font-family:'DM Mono',monospace;font-size:12px}
+.api-input-row{display:flex;gap:8px;margin-top:10px}
+.api-input-row input{flex:1;background:#fff;border:1.5px solid #E8C547;border-radius:8px;padding:8px 12px;font-size:13px;font-family:'DM Mono',monospace;color:#1A1410;outline:none}
+.api-input-row button{background:#1A1410;color:#E8C547;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px;font-weight:600;font-family:'DM Sans',sans-serif}
+
+/* ── Section Header ── */
+.section-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
+.section-title{font-family:'DM Serif Display',serif;font-size:24px;color:#1A1410}
+.section-sub{font-size:13px;color:#8C7B6B;margin-top:3px}
+.head-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ── Buttons ── */
+.btn{border:none;cursor:pointer;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:600;display:inline-flex;align-items:center;gap:5px;transition:all .15s;font-size:13px;padding:8px 16px}
+.btn-dark{background:#1A1410;color:#F5F0E8}.btn-dark:hover{background:#2E2318}
+.btn-outline{background:transparent;color:#5C4D3C;border:1.5px solid #D9CFBF;padding:7px 15px}.btn-outline:hover{background:#F0EBE2}
+.btn-danger{background:#FFE9E9;color:#C0392B;border:1.5px solid #FBBCBC;padding:7px 15px}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-yellow{background:#E8C547;color:#1A1410}.btn-yellow:hover{background:#D4B23A}
+
+/* ── Cards ── */
+.card{background:#fff;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,.06);transition:transform .15s,box-shadow .15s}
+.card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1)}
+
+/* ── Grid ── */
+.member-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+
+/* ── Forms ── */
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:700;color:#8C7B6B;margin-bottom:5px;letter-spacing:.06em;display:block;text-transform:uppercase}
+input[type=text],input[type=date],input[type=number],input[type=email],textarea,select{
+  width:100%;background:#F0EBE2;border:1.5px solid transparent;border-radius:9px;
+  padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:#1A1410;
+  outline:none;transition:border-color .15s;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:#C0BBAF;background:#F5F2EC}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:1000;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{background:#FDFAF6;border-radius:18px;padding:28px;width:90%;max-width:520px;box-shadow:0 24px 64px rgba(0,0,0,.2);transform:translateY(14px);transition:transform .2s;max-height:88vh;overflow-y:auto}
+.modal-overlay.open .modal-box{transform:translateY(0)}
+.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+.modal-title{font-family:'DM Serif Display',serif;font-size:19px;color:#1A1410}
+.modal-close{border:none;background:none;cursor:pointer;color:#8C7B6B;font-size:20px;width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.modal-close:hover{background:#F0EBE2}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+
+/* ── Members ── */
+.member-card{padding:20px;cursor:pointer}
+.m-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:17px;color:#fff;font-weight:700;flex-shrink:0}
+.m-tag{background:#F0EBE2;border-radius:6px;padding:2px 9px;font-size:10px;color:#5C4D3C;font-weight:600}
+.color-swatch{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2.5px solid transparent;transition:border-color .15s;flex-shrink:0}
+.color-swatch.selected{border-color:#1A1410}
+
+/* ── Meetings ── */
+.meeting-card{padding:22px;margin-bottom:12px;cursor:pointer}
+.attendee-bubble{width:26px;height:26px;border-radius:50%;font-size:10px;color:#fff;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid #fff;margin-left:-5px}
+.attendee-bubble:first-child{margin-left:0}
+.tag-chip{border-radius:6px;padding:2px 8px;font-size:10px;font-weight:600;background:#F0EBE2;color:#5C4D3C}
+
+/* ── Todo ── */
+.todo-item{background:#fff;border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:7px;transition:all .15s}
+.todo-check{width:20px;height:20px;border-radius:5px;border:2px solid #D9CFBF;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.todo-item.done .todo-check{background:#6BCB77;border-color:#6BCB77}
+.todo-item.done{background:#F5F0E8;opacity:.65}
+.prio-badge{border-radius:5px;padding:2px 7px;font-size:10px;font-weight:700}
+.todo-add-row{display:flex;gap:8px;align-items:center;background:#fff;border-radius:14px;padding:14px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+
+/* ── Lab Log ── */
+.log-type-btns{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.log-type-btn{border:1.5px solid #D9CFBF;background:transparent;color:#5C4D3C;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.log-type-btn.active{background:#1A1410;color:#F5F0E8;border-color:#1A1410}
+.log-item{padding:18px 20px;margin-bottom:10px}
+.log-type-label{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:5px;padding:2px 8px}
+
+/* ── Mice ── */
+.mice-table{background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.mice-th{display:grid;grid-template-columns:130px 100px 100px 55px 55px 55px 90px 80px 1fr 40px;padding:10px 18px;background:#F0EBE2;font-size:10px;font-weight:700;color:#8C7B6B;letter-spacing:.07em;text-transform:uppercase}
+.mice-tr{display:grid;grid-template-columns:130px 100px 100px 55px 55px 55px 90px 80px 1fr 40px;padding:14px 18px;border-top:1px solid #F0EBE2;align-items:center;transition:background .1s}
+.mice-tr:hover{background:#FDFAF6}
+.strain-badge{border-radius:6px;padding:2px 9px;font-size:11px;font-weight:600}
+.cage-dot{width:7px;height:7px;border-radius:2px;background:#E8C547;display:inline-block;margin-right:2px}
+.strain-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px}
+.strain-item{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:8px 12px;box-shadow:0 1px 6px rgba(0,0,0,.06)}
+
+/* ── Trash ── */
+.trash-item{padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.trash-meta{flex:1;min-width:0}
+.trash-type-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;border-radius:5px;padding:2px 8px;background:#F0EBE2;color:#8C7B6B}
+
+/* ── Onboarding ── */
+.onboard-item{display:flex;align-items:center;gap:10px;border-radius:10px;padding:11px 14px;cursor:pointer;transition:background .15s;margin-bottom:7px;background:#F5F0E8}
+.onboard-item.done-ob{background:#F0FBF0}
+.ob-check{width:20px;height:20px;border-radius:5px;background:#D9CFBF;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;font-size:11px;color:#fff}
+.onboard-item.done-ob .ob-check{background:#6BCB77}
+
+/* ── Overview ── */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+.stat-card{border-radius:16px;padding:22px 24px;position:relative;overflow:hidden}
+.stat-card-meetings{background:#F5F0E8;border:1.5px solid #E8C54755}
+.stat-card-tasks{background:#EEF4FF;border:1.5px solid #4D96FF44}
+.stat-card-urgent{background:#FFF1EE;border:1.5px solid #FF7E5F44}
+.stat-card-mice{background:#F0FBF0;border:1.5px solid #6BCB7744}
+.stat-number{font-family:'DM Serif Display',serif;font-size:48px;line-height:1;margin-bottom:8px}
+.stat-label{font-size:12px;font-weight:600;color:#5C4D3C;display:flex;align-items:center;gap:6px}
+.overview-panels{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.overview-panel{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.overview-panel-title{font-weight:700;font-size:14px;color:#1A1410;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.overview-item{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:10px;background:#F5F0E8;margin-bottom:7px;font-size:13px;color:#1A1410;line-height:1.5}
+.overview-item-urgent{background:#FFF1EE}
+.overview-empty{text-align:center;color:#C0BBAF;font-size:13px;padding:20px 0}
+.refresh-btn{background:#F0EBE2;border:1.5px solid #D9CFBF;color:#5C4D3C;border-radius:10px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s}
+.refresh-btn:hover{background:#E8E0D4}
+
+/* ── Misc ── */
+.del-btn{background:#FFF0F0;border:none;border-radius:7px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#C0392B;font-size:14px;flex-shrink:0;transition:background .15s}
+.del-btn:hover{background:#FFD5D5}
+.info-row{display:flex;align-items:center;gap:10px;background:#F5F0E8;border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.section-divider{font-size:11px;font-weight:700;color:#8C7B6B;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 8px}
+.empty-state{text-align:center;color:#8C7B6B;padding:48px 20px;font-size:14px}
+.toast{position:fixed;bottom:28px;right:28px;background:#1A1410;color:#F5F0E8;border-radius:10px;padding:11px 18px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;display:flex;align-items:center;gap:8px}
+.toast.show{opacity:1}
+.spinning{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+/* ── Freezer ── */
+.freezer-layer{margin-bottom:20px}
+.freezer-layer-label{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:#8C7B6B;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+.freezer-drawers{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.freezer-drawer{background:#fff;border-radius:12px;border:2px solid #EDE8E0;padding:12px;cursor:pointer;transition:all .15s;min-height:80px;position:relative}
+.freezer-drawer:hover{border-color:#4D96FF;box-shadow:0 4px 16px rgba(77,150,255,.15)}
+.freezer-drawer.has-data{border-color:#D9CFBF}
+.freezer-drawer-num{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;color:#C0BBAF;position:absolute;top:8px;right:10px}
+.freezer-drawer-preview{display:flex;flex-wrap:wrap;gap:2px;margin-top:14px}
+.freezer-slot-dot{width:7px;height:7px;border-radius:2px;background:#EDE8E0}
+.freezer-slot-dot.filled{background:#4D96FF}
+.freezer-slot-dot.search-hit{background:#E8C547;box-shadow:0 0 4px #E8C54799}
+/* Drawer interior */
+.drawer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:16px}
+.drawer-cell{background:#F5F0E8;border-radius:8px;padding:8px;cursor:pointer;min-height:68px;transition:all .15s;border:2px solid transparent;position:relative}
+.drawer-cell:hover{background:#EDE8E0;border-color:#D9CFBF}
+.drawer-cell.filled{background:#EEF4FF;border-color:#4D96FF33}
+.drawer-cell.search-match{background:#FFF8E6;border-color:#E8C547}
+.drawer-cell-label{font-size:10px;font-weight:600;color:#1A1410;line-height:1.4;word-break:break-word}
+.drawer-cell-sub{font-size:9px;color:#8C7B6B;margin-top:2px;line-height:1.3}
+.drawer-cell-pos{position:absolute;top:4px;right:5px;font-size:9px;color:#C0BBAF;font-family:'DM Mono',monospace}
+/* ── Password Gate ── */
+.pw-overlay{position:fixed;inset:0;background:#1A1410;z-index:9999;display:flex;align-items:center;justify-content:center}
+.pw-card{background:#FDFAF6;border-radius:24px;padding:48px 52px;text-align:center;width:360px;box-shadow:0 32px 80px rgba(0,0,0,.4)}
+.pw-logo{width:52px;height:52px;background:#E8C547;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:20px;font-weight:700;color:#1A1410;margin:0 auto 20px}
+.pw-title{font-family:'DM Serif Display',serif;font-size:22px;color:#1A1410;margin-bottom:4px}
+.pw-sub{font-size:13px;color:#8C7B6B;margin-bottom:28px}
+.pw-input{width:100%;background:#F0EBE2;border:1.5px solid transparent;border-radius:10px;padding:12px 16px;font-size:16px;font-family:'DM Sans',sans-serif;color:#1A1410;outline:none;text-align:center;letter-spacing:.15em;margin-bottom:12px;transition:border-color .15s}
+.pw-input:focus{border-color:#C0BBAF;background:#F5F2EC}
+.pw-input.error{border-color:#FF7E5F;background:#FFF1EE;animation:shake .3s ease}
+.pw-btn{width:100%;background:#1A1410;color:#F5F0E8;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;transition:background .15s}
+.pw-btn:hover{background:#2E2318}
+.pw-error{font-size:12px;color:#FF7E5F;margin-top:8px;height:16px}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* ── Welcome Overlay ── */
+.welcome-overlay{position:fixed;inset:0;background:rgba(26,20,16,.55);z-index:2000;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:fadeInWelcome .4s ease}
+@keyframes fadeInWelcome{from{opacity:0}to{opacity:1}}
+.welcome-overlay.hiding{animation:fadeOutWelcome .35s ease forwards}
+@keyframes fadeOutWelcome{to{opacity:0;pointer-events:none}}
+.welcome-card{background:#FDFAF6;border-radius:24px;padding:48px 52px;text-align:center;box-shadow:0 32px 80px rgba(0,0,0,.22);max-width:420px;pointer-events:none;transform:translateY(0);animation:slideUpWelcome .4s ease}
+@keyframes slideUpWelcome{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.welcome-card .welcome-icon{font-size:40px;margin-bottom:16px}
+.welcome-card .welcome-title{font-family:'DM Serif Display',serif;font-size:22px;color:#1A1410;margin-bottom:10px}
+.welcome-card .welcome-msg{font-size:14px;color:#8C7B6B;line-height:1.7}
+.welcome-card .welcome-hint{font-size:11px;color:#C0BBAF;margin-top:20px;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<!-- Password Gate -->
+<div id="pw-overlay" class="pw-overlay">
+  <div class="pw-card">
+    <div class="pw-logo">XU</div>
+    <div class="pw-title">Xu Lab</div>
+    <div class="pw-sub">MIBAM · UMN — Enter lab password to continue</div>
+    <input class="pw-input" id="pw-input" type="password" placeholder="••••••••"
+      onkeydown="if(event.key==='Enter')checkPassword()">
+    <button class="pw-btn" onclick="checkPassword()">Enter</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
+
+<div class="shell">
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo" style="font-family:'DM Serif Display',serif;font-size:15px;font-weight:700;color:#1A1410;letter-spacing:-0.5px">XU</div>
+    <button class="nav-btn active" id="nav-overview" onclick="switchTab('overview')" >🏠<span class="nav-tooltip">Overview</span></button>
+    <button class="nav-btn"        id="nav-members"  onclick="switchTab('members')" >👥<span class="nav-tooltip">Members</span></button>
+    <button class="nav-btn"        id="nav-meetings" onclick="switchTab('meetings')">📋<span class="nav-tooltip">Meetings</span></button>
+    <button class="nav-btn"        id="nav-todos"    onclick="switchTab('todos')"   >✅<span class="nav-tooltip">To-Do</span></button>
+    <button class="nav-btn"        id="nav-logs"     onclick="switchTab('logs')"    >📓<span class="nav-tooltip">Lab Log</span></button>
+    <button class="nav-btn"        id="nav-mice"     onclick="switchTab('mice')"    >🐭<span class="nav-tooltip">Mice</span></button>
+    <button class="nav-btn"        id="nav-waste"    onclick="switchTab('waste')"   >☣️<span class="nav-tooltip">Chem Waste</span></button>
+    <button class="nav-btn"        id="nav-freezer"  onclick="switchTab('freezer')" >🧊<span class="nav-tooltip">-80°C Freezer</span></button>
+    <button class="nav-btn"        id="nav-trash"    onclick="switchTab('trash')"   >🗑<span class="nav-tooltip">Trash</span><span class="trash-badge hidden" id="trash-badge">0</span></button>
+    <div style="flex:1"></div>
+    <button class="nav-btn" onclick="openModal('setup-modal')" title="Settings">⚙️<span class="nav-tooltip">Settings</span></button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="lab-name" id="topbar-lab-name">Xu Lab · Management System</div>
+        <div class="lab-sub" id="topbar-lab-sub"></div>
+      </div>
+      <div class="topbar-right">
+        <div class="date-chip" id="today-date"></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── OVERVIEW ──────────────────────────────────────── -->
+      <div id="tab-overview">
+        <div class="section-head">
+          <div><div class="section-title">Overview</div><div class="section-sub" id="overview-sub">Welcome back</div></div>
+          <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card stat-card-meetings"><div class="stat-number" id="ov-meetings" style="color:#8C6A1A">0</div><div class="stat-label">📋 Meeting Records</div></div>
+          <div class="stat-card stat-card-tasks"><div class="stat-number" id="ov-todos" style="color:#1A5FA8">0</div><div class="stat-label">⏳ Pending Tasks</div></div>
+          <div class="stat-card stat-card-urgent"><div class="stat-number" id="ov-urgent" style="color:#C0392B">0</div><div class="stat-label">🔴 Urgent Items</div></div>
+        </div>
+        <div class="overview-panels">
+          <div class="overview-panel"><div class="overview-panel-title">📋 Recent Meetings</div><div id="ov-recent-meetings"></div></div>
+          <div class="overview-panel"><div class="overview-panel-title">🔥 Urgent To-Dos</div><div id="ov-urgent-todos"></div></div>
+        </div>
+        <div class="overview-panel" style="background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,.06)">
+          <div class="overview-panel-title">📓 Recent Lab Logs</div>
+          <div id="ov-recent-logs"></div>
+        </div>
+      </div>
+
+      <!-- ── MEMBERS ─────────────────────────────────────────── -->
+      <div id="tab-members" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Lab Members</div><div class="section-sub" id="members-sub">Loading...</div></div>
+          <div class="head-actions">
+            <button class="btn btn-outline" onclick="loadOnboard();openModal('onboard-modal')">☑ Onboarding</button>
+            <button class="btn btn-dark" onclick="openModal('add-member-modal')">+ Add Member</button>
+          </div>
+        </div>
+        <div class="member-grid" id="member-grid"></div>
+      </div>
+
+      <!-- ── MEETINGS ────────────────────────────────────────── -->
+      <div id="tab-meetings" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Meeting Records</div><div class="section-sub" id="meetings-sub">Loading...</div></div>
+          <button class="btn btn-dark" onclick="openModal('add-meeting-modal')">+ New Record</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:#8C7B6B;flex-shrink:0">Filter by tag:</span>
+          <button class="log-type-btn active" id="tag-filter-all" onclick="setTagFilter('')" style="font-size:11px;padding:4px 10px">All</button>
+          <div id="tag-filter-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div id="meeting-list"></div>
+      </div>
+
+      <!-- ── TODOS ───────────────────────────────────────────── -->
+      <div id="tab-todos" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">To-Do</div><div class="section-sub" id="todos-sub">Loading...</div></div>
+          <div class="head-actions" id="prio-filter-btns">
+            <button class="btn btn-sm" id="pf-high"   onclick="setNewPrio('high')"   style="background:#FF7E5F22;color:#C0392B;border:1.5px solid transparent">🔴 Urgent</button>
+            <button class="btn btn-sm" id="pf-medium" onclick="setNewPrio('medium')" style="background:#E8C54722;color:#8C5E0A;border:1.5px solid #E8C547">🟡 Medium</button>
+            <button class="btn btn-sm" id="pf-low"    onclick="setNewPrio('low')"    style="background:#6BCB7722;color:#2E7D32;border:1.5px solid transparent">🟢 Low</button>
+          </div>
+        </div>
+        <div class="todo-add-row">
+          <input type="text" id="todo-input" placeholder="Add a task… press Enter" style="flex:1" onkeydown="if(event.key==='Enter')addTodo()">
+          <input type="date" id="todo-due" style="width:130px" title="Due date">
+          <button class="btn btn-dark" onclick="addTodo()">+ Add</button>
+        </div>
+        <div id="todo-list"></div>
+      </div>
+
+      <!-- ── LAB LOG ─────────────────────────────────────────── -->
+      <div id="tab-logs" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Lab Log</div><div class="section-sub" id="logs-sub">Loading...</div></div>
+          <button class="btn btn-dark" onclick="openModal('add-log-modal')">+ New Entry</button>
+        </div>
+        <div class="log-type-btns" id="log-filter-btns">
+          <button class="log-type-btn active" onclick="setLogFilter('all')" id="lf-all">All</button>
+          <button class="log-type-btn" onclick="setLogFilter('experiment')" id="lf-experiment">🔬 Experiment</button>
+          <button class="log-type-btn" onclick="setLogFilter('observation')" id="lf-observation">👁 Observation</button>
+          <button class="log-type-btn" onclick="setLogFilter('note')" id="lf-note">📝 Note</button>
+          <button class="log-type-btn" onclick="setLogFilter('protocol')" id="lf-protocol">📄 Protocol</button>
+        </div>
+        <div id="log-list"></div>
+      </div>
+
+      <!-- ── MICE ────────────────────────────────────────────── -->
+      <div id="tab-mice" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Mouse Colony</div><div class="section-sub" id="mice-sub">Loading...</div></div>
+          <div class="head-actions">
+            <button class="btn btn-outline" onclick="openModal('strain-modal')">🧬 Strains</button>
+            <button class="btn btn-dark"    onclick="openModal('add-mouse-modal')">+ Add Record</button>
+          </div>
+        </div>
+        <!-- Stats bar -->
+        <div id="mice-stats-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
+        <!-- Filters -->
+        <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)">
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:10px;font-weight:700;color:#8C7B6B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Strain</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="log-type-btn active" id="strain-filter-all" onclick="setMiceFilter('strain','')" style="font-size:10px;padding:3px 8px">All</button>
+                <div id="strain-filter-btns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:10px;font-weight:700;color:#8C7B6B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Project Tag</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="log-type-btn active" id="ptag-filter-all" onclick="setMiceFilter('project_tag','')" style="font-size:10px;padding:3px 8px">All</button>
+                <div id="ptag-filter-btns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:160px">
+              <div style="font-size:10px;font-weight:700;color:#8C7B6B;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Host</div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="log-type-btn active" id="host-filter-all" onclick="setMiceFilter('host','')" style="font-size:10px;padding:3px 8px">All</button>
+                <div id="host-filter-btns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mice-table">
+          <div class="mice-th" style="grid-template-columns:130px 100px 100px 55px 55px 55px 90px 80px 1fr 40px"><div>Cage Numbers</div><div>Strain</div><div>Mating Unit</div><div>♀</div><div>♂</div><div>Exp.</div><div>Host</div><div>Project</div><div>Notes</div><div></div></div>
+          <div id="mice-rows"></div>
+        </div>
+      </div>
+
+      <!-- ── CHEM WASTE ──────────────────────────────────────────── -->
+      <div id="tab-waste" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Chemical Waste</div><div class="section-sub">Chematix waste management portal</div></div>
+          <button class="btn btn-dark" onclick="window.open('https://www.dehs-tools.umn.edu/Chematix/Login','_blank')">☣️ Open Chematix</button>
+        </div>
+        <!-- Link card -->
+        <div class="card" style="padding:24px;margin-bottom:16px;display:flex;align-items:center;gap:20px;cursor:pointer" onclick="window.open('https://www.dehs-tools.umn.edu/Chematix/Login','_blank')">
+          <div style="width:52px;height:52px;border-radius:14px;background:#FFF1EE;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">☣️</div>
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#1A1410;margin-bottom:3px">UMN Chematix Portal</div>
+            <div style="font-size:12px;color:#8C7B6B">dehs-tools.umn.edu/Chematix/Login</div>
+          </div>
+          <div style="margin-left:auto;color:#8C7B6B;font-size:20px">↗</div>
+        </div>
+        <!-- Last disposal record -->
+        <div class="card" style="padding:22px">
+          <div style="font-weight:700;font-size:15px;color:#1A1410;margin-bottom:16px">🗓 Disposal Log</div>
+          <div style="display:flex;gap:10px;margin-bottom:16px;align-items:flex-end">
+            <div style="flex:1"><div style="font-size:11px;font-weight:700;color:#8C7B6B;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Date</div><input type="date" id="waste-date" style="width:100%"></div>
+            <div style="flex:2"><div style="font-size:11px;font-weight:700;color:#8C7B6B;margin-bottom:5px;text-transform:uppercase;letter-spacing:.05em">Note (waste type / container)</div><input type="text" id="waste-note" placeholder="e.g. Organic solvents, 5L container" style="width:100%"></div>
+            <button class="btn btn-dark" onclick="addWasteLog()">+ Log</button>
+          </div>
+          <div id="waste-log-list"></div>
+        </div>
+      </div>
+
+      <!-- ── -80 FREEZER ────────────────────────────────────────── -->
+      <div id="tab-freezer" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">-80°C Freezer</div><div class="section-sub" id="freezer-sub">3 layers · 6 drawers each</div></div>
+          <div class="head-actions">
+            <input type="text" id="freezer-search" placeholder="🔍 Search box tag, tissue, project..." style="width:240px;font-size:13px" oninput="renderFreezer()">
+          </div>
+        </div>
+        <div id="freezer-search-results" class="hidden" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)"></div>
+        <div id="freezer-front-view"></div>
+      </div>
+
+      <!-- ── TRASH ───────────────────────────────────────────── -->
+      <div id="tab-trash" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Trash</div><div class="section-sub" id="trash-sub">Items can be restored or permanently deleted</div></div>
+          <button class="btn btn-danger" onclick="clearTrash()">🗑 Empty Trash</button>
+        </div>
+        <div id="trash-list"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+</div><!-- /shell -->
+
+<div class="toast" id="toast"></div>
+<!-- Welcome Overlay -->
+<div class="welcome-overlay" id="welcome-overlay" onclick="dismissWelcome()">
+  <div class="welcome-card">
+    <div class="welcome-icon">👋</div>
+    <div class="welcome-title">Welcome back.</div>
+    <div class="welcome-msg">The system is ready for use.<br>Have a good day.</div>
+    <div class="welcome-hint">CLICK ANYWHERE TO CONTINUE</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ MODALS ══════════════════════════════════════════════ -->
+
+<!-- Setup -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">⚙️ Settings</span><button class="modal-close" onclick="closeModal('setup-modal')">✕</button></div>
+    <div style="background:#F0FBF0;border:1.5px solid #6BCB77;border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#1E6B30;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">✅</span>
+      <div><strong>Connected to Supabase</strong><br><span style="font-size:11px;opacity:.8">yqxwdqpepeuimbrshgvo.supabase.co · MIBAM UMN</span></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Your Name (shown in logs)</label>
+      <input type="text" id="user-name-input" placeholder="e.g. Alex Chen">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('setup-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member Detail -->
+<div class="modal-overlay" id="member-detail-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Member Profile</span><button class="modal-close" onclick="closeModal('member-detail-modal')">✕</button></div>
+    <div id="member-detail-content"></div>
+  </div>
+</div>
+
+<!-- Add Member -->
+<div class="modal-overlay" id="add-member-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Add New Member</span><button class="modal-close" onclick="closeModal('add-member-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="m-name" placeholder="Jane Smith"></div>
+      <div class="form-group"><label class="form-label">Role</label><input type="text" id="m-role" placeholder="PhD Student / Postdoc / PI..."></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="m-email" placeholder="jane@university.edu"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input type="text" id="m-phone" placeholder="+1 (555) 000-0000"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Projects / Responsibilities (comma separated)</label><input type="text" id="m-projects" placeholder="Mouse model, Protein structure..."></div>
+    <div class="form-group">
+      <label class="form-label">Avatar Color</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+        <input type="color" id="m-color" value="#E8C547" onchange="onColorPickerChange(this.value)" style="width:48px;height:40px;border:none;border-radius:9px;cursor:pointer;background:transparent;padding:2px;flex-shrink:0">
+        <div style="display:flex;gap:7px;flex-wrap:wrap" id="color-picker">
+          <div class="color-swatch selected" style="background:#E8C547" onclick="selectColor('#E8C547')"></div>
+          <div class="color-swatch" style="background:#FF7E5F" onclick="selectColor('#FF7E5F')"></div>
+          <div class="color-swatch" style="background:#6BCB77" onclick="selectColor('#6BCB77')"></div>
+          <div class="color-swatch" style="background:#4D96FF" onclick="selectColor('#4D96FF')"></div>
+          <div class="color-swatch" style="background:#C77DFF" onclick="selectColor('#C77DFF')"></div>
+          <div class="color-swatch" style="background:#FF6B6B" onclick="selectColor('#FF6B6B')"></div>
+          <div class="color-swatch" style="background:#20C997" onclick="selectColor('#20C997')"></div>
+          <div class="color-swatch" style="background:#F97316" onclick="selectColor('#F97316')"></div>
+          <div class="color-swatch" style="background:#EC4899" onclick="selectColor('#EC4899')"></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8C7B6B;margin-top:6px">Click the color box on the left to pick any custom color</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-member-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="addMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding -->
+<div class="modal-overlay" id="onboard-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">New Member Onboarding</span><button class="modal-close" onclick="closeModal('onboard-modal')">✕</button></div>
+    <div id="onboard-list"></div>
+    <div style="margin-top:12px;text-align:center;font-size:13px;color:#8C7B6B" id="onboard-progress"></div>
+  </div>
+</div>
+
+<!-- Add Meeting -->
+<div class="modal-overlay" id="add-meeting-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">New Meeting Record</span><button class="modal-close" onclick="closeModal('add-meeting-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="mt-date"></div>
+      <div class="form-group"><label class="form-label">Presenter</label><input type="text" id="mt-presenter" placeholder="Name"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Title *</label><input type="text" id="mt-title" placeholder="Weekly lab meeting #25 / Journal club..."></div>
+    <div class="form-group"><label class="form-label">Summary</label><textarea id="mt-summary" placeholder="Key points discussed..." rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Notes / Action Items</label><textarea id="mt-notes" placeholder="Follow-up tasks, decisions made..." rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input type="text" id="mt-tags" placeholder="NSFC, mouse model, sequencing..."></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-meeting-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="addMeeting()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Detail -->
+<div class="modal-overlay" id="meeting-detail-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title" id="meeting-detail-title">Meeting Detail</span><button class="modal-close" onclick="closeModal('meeting-detail-modal')">✕</button></div>
+    <div id="meeting-detail-content"></div>
+  </div>
+</div>
+
+<!-- Add Log -->
+<div class="modal-overlay" id="add-log-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">New Log Entry</span><button class="modal-close" onclick="closeModal('add-log-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="lg-date"></div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="lg-type">
+          <option value="experiment">🔬 Experiment</option>
+          <option value="observation">👁 Observation</option>
+          <option value="note">📝 Note</option>
+          <option value="protocol">📄 Protocol</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Author</label><input type="text" id="lg-author" placeholder="Your name"></div>
+    <div class="form-group"><label class="form-label">Content *</label><textarea id="lg-content" placeholder="Describe what you did, observed, or noted..." rows="5"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-log-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="addLog()">Save Entry</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Mouse -->
+<div class="modal-overlay" id="add-mouse-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Add Cage Record</span><button class="modal-close" onclick="closeModal('add-mouse-modal')">✕</button></div>
+    <div class="form-group"><label class="form-label">Number of Cages *</label><input type="number" id="mc-num-cages" placeholder="1" min="1" value="1"></div>
+    <div class="form-group">
+      <label class="form-label">Cage Numbers (one per line or comma-separated)</label>
+      <textarea id="mc-cage-nos" rows="2" placeholder="e.g. A-001, A-002&#10;Leave blank to auto-number"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Strain</label><select id="mc-strain"></select></div>
+      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="mc-mu" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">♀ Female Count</label><input type="number" id="mc-female" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">♂ Male Count</label><input type="number" id="mc-male" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Exp. Cages Used</label><input type="number" id="mc-exp" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">Host</label><input type="text" id="mc-host" placeholder="e.g. Alex Chen"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Project Tag *</label><input type="text" id="mc-project-tag" placeholder="e.g. NSFC-2024, Tumor-A"></div>
+      <div class="form-group"><label class="form-label">Notes</label><input type="text" id="mc-notes" placeholder="Tumor model, control group..."></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-mouse-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="addMouse()">Add Cage</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Edit Member -->
+<div class="modal-overlay" id="edit-member-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Member</span><button class="modal-close" onclick="closeModal('edit-member-modal')">✕</button></div>
+    <input type="hidden" id="em-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="em-name"></div>
+      <div class="form-group"><label class="form-label">Role</label><input type="text" id="em-role"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="em-email"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input type="text" id="em-phone"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Projects / Responsibilities (comma separated)</label><input type="text" id="em-projects"></div>
+    <div class="form-group">
+      <label class="form-label">Avatar Color</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+        <input type="color" id="em-color" value="#E8C547" style="width:48px;height:40px;border:none;border-radius:9px;cursor:pointer;background:transparent;padding:2px;flex-shrink:0">
+        <div style="font-size:12px;color:#8C7B6B">Pick any color using the color picker</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-member-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveMember()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Meeting -->
+<div class="modal-overlay" id="edit-meeting-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Meeting</span><button class="modal-close" onclick="closeModal('edit-meeting-modal')">✕</button></div>
+    <input type="hidden" id="emt-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="emt-date"></div>
+      <div class="form-group"><label class="form-label">Presenter</label><input type="text" id="emt-presenter"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Title *</label><input type="text" id="emt-title"></div>
+    <div class="form-group"><label class="form-label">Summary</label><textarea id="emt-summary" rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Notes / Action Items</label><textarea id="emt-notes" rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input type="text" id="emt-tags"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-meeting-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveMeeting()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Todo -->
+<div class="modal-overlay" id="edit-todo-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Task</span><button class="modal-close" onclick="closeModal('edit-todo-modal')">✕</button></div>
+    <input type="hidden" id="et-id">
+    <div class="form-group"><label class="form-label">Task *</label><input type="text" id="et-text"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Due Date</label><input type="date" id="et-due"></div>
+      <div class="form-group">
+        <label class="form-label">Priority</label>
+        <select id="et-priority">
+          <option value="high">🔴 Urgent</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-todo-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveTodo()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Log -->
+<div class="modal-overlay" id="edit-log-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Log Entry</span><button class="modal-close" onclick="closeModal('edit-log-modal')">✕</button></div>
+    <input type="hidden" id="el-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="el-date"></div>
+      <div class="form-group">
+        <label class="form-label">Type</label>
+        <select id="el-type">
+          <option value="experiment">🔬 Experiment</option>
+          <option value="observation">👁 Observation</option>
+          <option value="note">📝 Note</option>
+          <option value="protocol">📄 Protocol</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Author</label><input type="text" id="el-author"></div>
+    <div class="form-group"><label class="form-label">Content *</label><textarea id="el-content" rows="5"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-log-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveLog()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Mouse -->
+<div class="modal-overlay" id="edit-mouse-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Cage Record</span><button class="modal-close" onclick="closeModal('edit-mouse-modal')">✕</button></div>
+    <input type="hidden" id="ems-id">
+    <div class="form-group"><label class="form-label">Number of Cages *</label><input type="number" id="ems-num-cages" placeholder="1" min="1"></div>
+    <div class="form-group">
+      <label class="form-label">Cage Numbers (one per line or comma-separated)</label>
+      <textarea id="ems-cage-nos" rows="3" placeholder="e.g. A-001, A-002, A-003"></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Strain</label><select id="ems-strain"></select></div>
+      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="ems-mu" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">♀ Female Count</label><input type="number" id="ems-female" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">♂ Male Count</label><input type="number" id="ems-male" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Exp. Cages Used</label><input type="number" id="ems-exp" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">Host</label><input type="text" id="ems-host"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Project Tag *</label><input type="text" id="ems-project-tag"></div>
+      <div class="form-group"><label class="form-label">Notes</label><input type="text" id="ems-notes"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-mouse-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveMouse()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Freezer Slot Edit -->
+<div class="modal-overlay" id="freezer-slot-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-head"><span class="modal-title" id="freezer-slot-title">Edit Slot</span><button class="modal-close" onclick="closeModal('freezer-slot-modal')">✕</button></div>
+    <input type="hidden" id="fs-layer"><input type="hidden" id="fs-drawer"><input type="hidden" id="fs-row"><input type="hidden" id="fs-col">
+    <div class="form-group"><label class="form-label">Box / Sample Label</label><input type="text" id="fs-label" placeholder="e.g. KO-Mouse-Brain-01"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Host</label><input type="text" id="fs-host" placeholder="e.g. Alex"></div>
+      <div class="form-group"><label class="form-label">Species</label><input type="text" id="fs-species" placeholder="Mouse / Human..."></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tissue</label><input type="text" id="fs-tissue" placeholder="Brain / Liver..."></div>
+      <div class="form-group"><label class="form-label">Project</label><input type="text" id="fs-project" placeholder="Project name"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea id="fs-notes" rows="2" placeholder="Additional info..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="clearFreezerSlot()">Clear Slot</button>
+      <button class="btn btn-outline" onclick="closeModal('freezer-slot-modal')">Cancel</button>
+      <button class="btn btn-dark" onclick="saveFreezerSlot()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Strains -->
+<div class="modal-overlay" id="strain-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">🧬 Mouse Strains</span><button class="modal-close" onclick="closeModal('strain-modal')">✕</button></div>
+    <div id="strain-list" class="strain-list"></div>
+    <div style="border-top:1px solid #EDE8E0;padding-top:16px;margin-top:8px">
+      <div class="form-label" style="margin-bottom:10px">Add New Strain</div>
+      <div class="form-row" style="margin-bottom:10px">
+        <input type="text" id="ns-name" placeholder="e.g. C57BL/6N">
+        <input type="color" id="ns-color" value="#8C7B6B" style="width:100%;height:40px;border:none;border-radius:9px;cursor:pointer;background:transparent;padding:2px">
+      </div>
+      <button class="btn btn-dark" style="width:100%" onclick="addStrain()">+ Add Strain</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── Password Gate ─────────────────────────────────────────────────────────────
+// Change this password to whatever you want
+const LAB_PASSWORD = 'xulab2024';
+const PW_SESSION_KEY = 'xulab_auth';
+
+function checkPassword() {
+  const val = document.getElementById('pw-input').value;
+  if (val === LAB_PASSWORD) {
+    sessionStorage.setItem(PW_SESSION_KEY, '1');
+    const overlay = document.getElementById('pw-overlay');
+    overlay.style.transition = 'opacity .4s';
+    overlay.style.opacity = '0';
+    setTimeout(() => overlay.remove(), 400);
+  } else {
+    const input = document.getElementById('pw-input');
+    const err   = document.getElementById('pw-error');
+    input.classList.add('error');
+    err.textContent = 'Incorrect password. Try again.';
+    input.value = '';
+    setTimeout(() => { input.classList.remove('error'); err.textContent = ''; }, 1500);
+  }
+}
+
+// Auto-pass if already authenticated this session
+if (sessionStorage.getItem(PW_SESSION_KEY) === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const overlay = document.getElementById('pw-overlay');
+    if (overlay) overlay.remove();
+  });
+}
+</script>
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// STATE & CONFIG
+// ══════════════════════════════════════════════════════════════════════════════
+const SB_URL    = 'https://yqxwdqpepeuimbrshgvo.supabase.co';
+const SB_KEY    = 'sb_publishable_WfDiQudgiBKMvWZpxDSEzw_ioRNA58W';
+const LAB_NAME  = 'Xu Lab · Management System';
+const LAB_SUB   = 'MIBAM UMN';
+let USER_NAME = localStorage.getItem('xulab_user') || 'Lab Member';
+let sb        = null;  // Supabase client
+let newPrio   = 'medium';
+let logFilter = 'all';
+let state     = { members:[], meetings:[], todos:[], logs:[], mice:[], strains:[], onboard:[], trash:[], waste:[], freezer:[] };
+
+const BUBBLE_COLORS = ['#E8C547','#FF7E5F','#6BCB77','#4D96FF','#C77DFF','#20C997'];
+const PRIO_COLOR    = { high:'#FF7E5F', medium:'#E8C547', low:'#6BCB77' };
+const PRIO_LABEL    = { high:'Urgent', medium:'Medium', low:'Low' };
+const LOG_META      = {
+  experiment : { label:'Experiment', bg:'#4D96FF22', color:'#1A4E8C' },
+  observation: { label:'Observation', bg:'#6BCB7722', color:'#1E6B30' },
+  note       : { label:'Note', bg:'#E8C54722', color:'#7A5200' },
+  protocol   : { label:'Protocol', bg:'#C77DFF22', color:'#5A1A8C' },
+};
+
+const $ = id => document.getElementById(id);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SUPABASE CLIENT
+// ══════════════════════════════════════════════════════════════════════════════
+function initSupabase() {
+  if (!SB_URL || !SB_KEY) return false;
+  try {
+    sb = supabase.createClient(SB_URL, SB_KEY);
+    return true;
+  } catch(e) { return false; }
+}
+
+// Supabase REST helpers
+async function sbGet(table, opts={}) {
+  if (!sb) return [];
+  let q = sb.from(table).select('*');
+  if (opts.order) q = q.order(opts.order, { ascending: opts.asc ?? false });
+  const { data, error } = await q;
+  if (error) { console.error(table, error); return []; }
+  return data || [];
+}
+
+async function sbInsert(table, row) {
+  if (!sb) return false;
+  const { error } = await sb.from(table).insert(row);
+  if (error) { console.error('insert', table, error); return false; }
+  return true;
+}
+
+async function sbUpdate(table, id, updates) {
+  if (!sb) return false;
+  const { error } = await sb.from(table).update(updates).eq('id', id);
+  if (error) { console.error('update', table, error); return false; }
+  return true;
+}
+
+async function sbDelete(table, id) {
+  if (!sb) return false;
+  const { error } = await sb.from(table).delete().eq('id', id);
+  if (error) { console.error('delete', table, error); return false; }
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ══════════════════════════════════════════════════════════════════════════════
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function showToast(msg, icon='✅', duration=2600) {
+  const t = $('toast'); t.innerHTML = `<span>${icon}</span>${msg}`;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function openModal(id)  { $(id).classList.add('open'); }
+function closeModal(id) { $(id).classList.remove('open'); }
+function closeModalOutside(e, id) { if (e.target.id === id) closeModal(id); }
+
+function selectColor(c) {
+  $('m-color').value = c;
+  document.querySelectorAll('.color-swatch').forEach(d => d.classList.toggle('selected', d.style.background === c));
+}
+function onColorPickerChange(val) {
+  $('m-color').value = val;
+  document.querySelectorAll('.color-swatch').forEach(d => d.classList.remove('selected'));
+}
+
+function saveSettings() {
+  USER_NAME = $('user-name-input').value.trim() || 'Lab Member';
+  localStorage.setItem('xulab_user', USER_NAME);
+  closeModal('setup-modal');
+  showToast('Name saved ✅');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LOAD ALL DATA
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadAll() {
+  if (!sb) { renderAll(); return; }
+  try {
+    showToast('Loading…', '⏳');
+    const [members, meetings, todos, logs, mice, strains, onboard, trash, waste, freezer] = await Promise.all([
+      sbGet('members',    { order:'created_at', asc:true }),
+      sbGet('meetings',   { order:'created_at', asc:false }),
+      sbGet('todos',      { order:'created_at', asc:false }),
+      sbGet('logs',       { order:'created_at', asc:false }),
+      sbGet('mice',       { order:'cage_no',    asc:true }),
+      sbGet('strains',    { order:'created_at', asc:true }),
+      sbGet('onboarding', { order:'created_at', asc:true }),
+      sbGet('trash',      { order:'deleted_at', asc:false }),
+      sbGet('waste_log',  { order:'created_at', asc:false }),
+      sbGet('freezer_slots', { order:'created_at', asc:true }),
+    ]);
+    state.members  = members.map(m => ({ ...m, projects: typeof m.projects==='string' ? JSON.parse(m.projects||'[]') : (m.projects||[]), avatar: (m.name||'?')[0].toUpperCase() }));
+    state.meetings = meetings.map(m => ({ ...m, tags: typeof m.tags==='string' ? JSON.parse(m.tags||'[]') : (m.tags||[]) }));
+    state.todos    = todos;
+    state.logs     = logs;
+    state.mice     = mice.map(m => ({ ...m, expCages: m.exp_cages, cageNo: m.cage_no, matingUnit: m.mating_unit }));
+    state.strains  = strains;
+    state.onboard  = onboard;
+    state.trash    = trash.map(t => ({ ...t, item: typeof t.item_json==='string' ? JSON.parse(t.item_json||'{}'): (t.item_json||{}) }));
+    state.waste    = waste || [];
+    state.freezer  = freezer || [];
+  } catch(e) { console.error(e); showToast('Failed to load data', '⚠️'); }
+  renderAll();
+}
+
+function renderAll() {
+  renderOverview(); renderMembers(); renderMeetings(); renderTodos();
+  renderLogs(); renderMice(); renderWaste(); renderFreezer(); renderTrash();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════════════════════
+const TABS = ['overview','members','meetings','todos','logs','mice','waste','freezer','trash'];
+function switchTab(name) {
+  TABS.forEach(t => {
+    $('tab-'+t).classList.toggle('hidden', t !== name);
+    $('nav-'+t).classList.toggle('active', t === name);
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════════════════════════════════════════
+function renderOverview() {
+  const pending = state.todos.filter(t => !t.done);
+  const urgent  = pending.filter(t => t.priority === 'high');
+
+  $('ov-meetings').textContent = state.meetings.length;
+  $('ov-todos').textContent    = pending.length;
+  $('ov-urgent').textContent   = urgent.length;
+
+  // Recent meetings (last 3)
+  const recentMeetings = [...state.meetings].slice(0, 3);
+  $('ov-recent-meetings').innerHTML = recentMeetings.length === 0
+    ? '<div class="overview-empty">No meetings yet.</div>'
+    : recentMeetings.map(m => `
+      <div class="overview-item" onclick="switchTab('meetings')" style="cursor:pointer">
+        <span style="flex-shrink:0">📋</span>
+        <div>
+          <div style="font-weight:600">${m.title}</div>
+          <div style="font-size:11px;color:#8C7B6B;margin-top:1px">${m.date||'No date'} ${m.presenter?'· '+m.presenter:''}</div>
+        </div>
+      </div>`).join('');
+
+  // Urgent todos
+  $('ov-urgent-todos').innerHTML = urgent.length === 0
+    ? '<div class="overview-empty">No urgent items 🎉</div>'
+    : urgent.map(t => `
+      <div class="overview-item overview-item-urgent" onclick="switchTab('todos')" style="cursor:pointer">
+        <span style="color:#FF7E5F;flex-shrink:0">●</span>
+        <span>${t.text}${t.due?`<span style="font-size:11px;color:#8C7B6B;margin-left:8px">Due ${t.due}</span>`:''}</span>
+      </div>`).join('');
+
+  // Recent logs (last 3)
+  const recentLogs = [...state.logs].reverse().slice(0, 3);
+  $('ov-recent-logs').innerHTML = recentLogs.length === 0
+    ? '<div class="overview-empty">No log entries yet.</div>'
+    : recentLogs.map(l => {
+      const meta = LOG_META[l.type] || LOG_META.note;
+      return `<div class="overview-item" onclick="switchTab('logs')" style="cursor:pointer">
+        <span class="log-type-label" style="background:${meta.bg};color:${meta.color};flex-shrink:0">${meta.label}</span>
+        <div style="min-width:0">
+          <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${l.content?.substring(0,80)||''}</div>
+          <div style="font-size:11px;color:#8C7B6B;margin-top:1px">${l.date||''} ${l.author?'· '+l.author:''}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+  // Update sub text
+  const now = new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+  $('overview-sub').textContent = `Last updated ${now}`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MEMBERS
+// ══════════════════════════════════════════════════════════════════════════════
+function renderMembers() {
+  const members = state.members;
+  $('members-sub').textContent = members.length + ' member' + (members.length !== 1 ? 's' : '');
+  $('member-grid').innerHTML = members.length === 0
+    ? '<div class="empty-state">No members yet. Add the first one!</div>'
+    : members.map(m => `
+      <div class="card card-hover member-card" onclick="showMember('${m.id}')">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div class="m-avatar" style="background:${m.color||'#E8C547'}">${m.avatar||'?'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;color:#1A1410;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name}</div>
+            <div style="font-size:11px;color:#8C7B6B;margin-top:1px">${m.role||'—'}</div>
+          </div>
+          <button onclick="event.stopPropagation();editMember('${m.id}')" style="background:#F0EBE2;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✏️</button>
+          <button class="del-btn" onclick="event.stopPropagation();trashItem('member','${m.id}')">🗑</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:7px;font-size:11px;color:#5C4D3C"><span>✉️</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.email||'—'}</span></div>
+          <div style="display:flex;align-items:center;gap:7px;font-size:11px;color:#5C4D3C"><span>📞</span>${m.phone||'—'}</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${(m.projects||[]).map(p=>`<span class="m-tag">${p}</span>`).join('')}
+        </div>
+      </div>`).join('');
+}
+
+function showMember(id) {
+  const m = state.members.find(x => x.id == id); if (!m) return;
+  $('member-detail-content').innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div class="m-avatar" style="background:${m.color||'#E8C547'};width:56px;height:56px;font-size:22px">${m.avatar}</div>
+      <div><div style="font-size:19px;font-weight:700;color:#1A1410">${m.name}</div><div style="color:#8C7B6B;margin-top:1px">${m.role||''}</div></div>
+    </div>
+    <div class="info-row"><span>✉️</span><div><div style="font-size:10px;color:#8C7B6B">Email</div><div style="font-size:13px">${m.email||'—'}</div></div></div>
+    <div class="info-row"><span>📞</span><div><div style="font-size:10px;color:#8C7B6B">Phone</div><div style="font-size:13px">${m.phone||'—'}</div></div></div>
+    <div style="margin-top:14px">
+      <div class="form-label" style="margin-bottom:8px">Projects / Responsibilities</div>
+      ${(m.projects||[]).length ? (m.projects||[]).map(p=>`<div style="background:#F0EBE2;border-radius:8px;padding:9px 12px;margin-bottom:7px;font-size:13px;color:#1A1410">📌 ${p}</div>`).join('') : '<div style="color:#8C7B6B;font-size:13px">No projects listed</div>'}
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="editMember('${m.id}')">✏️ Edit</button>
+    </div>`;
+  openModal('member-detail-modal');
+}
+
+async function addMember() {
+  const name = $('m-name').value.trim();
+  if (!name) { showToast('Please enter a name','⚠️'); return; }
+  const projects = $('m-projects').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const row = { id:uid(), name, role:$('m-role').value, email:$('m-email').value, phone:$('m-phone').value, projects:JSON.stringify(projects), color:$('m-color').value };
+  const ok = await sbInsert('members', row);
+  if (!ok) { showToast('Failed to save','⚠️'); return; }
+  state.members.push({ ...row, projects, avatar: name[0].toUpperCase() });
+  renderMembers();
+  ['m-name','m-role','m-email','m-phone','m-projects'].forEach(id => $(id).value = '');
+  closeModal('add-member-modal');
+  showToast('Member added');
+}
+
+// ── Onboarding ──
+async function loadOnboard() {
+  if (sb) {
+    state.onboard = await sbGet('onboarding', { order:'created_at', asc:true });
+  }
+  const items = state.onboard;
+  const done  = items.filter(i=>i.done).length;
+  $('onboard-list').innerHTML = items.map(i => `
+    <div class="onboard-item ${i.done?'done-ob':''}" onclick="toggleOnboard('${i.id}',${!i.done})">
+      <div class="ob-check">${i.done?'✓':''}</div>
+      <span style="font-size:13px;color:${i.done?'#3D8B47':'#1A1410'};text-decoration:${i.done?'line-through':'none'}">${i.task}</span>
+    </div>`).join('');
+  $('onboard-progress').textContent = `${done} / ${items.length} completed`;
+}
+
+async function toggleOnboard(id, done) {
+  const item = state.onboard.find(i => i.id == id);
+  if (item) item.done = done;
+  await sbUpdate('onboarding', id, { done });
+  loadOnboard();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MEETINGS
+// ══════════════════════════════════════════════════════════════════════════════
+let activeTagFilter = '';
+function setTagFilter(tag) {
+  activeTagFilter = tag;
+  document.querySelectorAll('[id^="tag-filter-"]').forEach(b => b.classList.remove('active'));
+  const btn = tag ? document.getElementById('tag-filter-' + tag.replace(/[^a-zA-Z0-9]/g,'_')) : document.getElementById('tag-filter-all');
+  if (btn) btn.classList.add('active');
+  renderMeetings();
+}
+
+function buildTagFilterBtns() {
+  const allTags = [...new Set(state.meetings.flatMap(m => m.tags||[]))].filter(Boolean);
+  $('tag-filter-btns').innerHTML = allTags.map(t =>
+    `<button class="log-type-btn ${activeTagFilter===t?'active':''}" id="tag-filter-${t.replace(/[^a-zA-Z0-9]/g,'_')}" onclick="setTagFilter('${t}')" style="font-size:11px;padding:4px 10px">${t}</button>`
+  ).join('');
+}
+
+function renderMeetings() {
+  buildTagFilterBtns();
+  const meetings = activeTagFilter
+    ? state.meetings.filter(m => (m.tags||[]).includes(activeTagFilter))
+    : state.meetings;
+  $('meetings-sub').textContent = state.meetings.length + ' record' + (state.meetings.length !== 1 ? 's' : '') + (activeTagFilter ? ` · filtered by "${activeTagFilter}"` : '');
+  $('meeting-list').innerHTML = meetings.length === 0
+    ? '<div class="empty-state">No meetings recorded yet.</div>'
+    : meetings.map(m => `
+      <div class="card card-hover meeting-card" onclick="showMeeting('${m.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <div>
+            <div style="font-weight:700;font-size:15px;color:#1A1410">${m.title}</div>
+            <div style="font-size:12px;color:#8C7B6B;margin-top:3px">📅 ${m.date||'No date'} ${m.presenter?`· Presenter: <strong>${m.presenter}</strong>`:''}</div>
+          </div>
+          <button onclick="event.stopPropagation();editMeeting('${m.id}')" style="background:#F0EBE2;border:none;border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center">✏️</button>
+          <button class="del-btn" onclick="event.stopPropagation();trashItem('meeting','${m.id}')">🗑</button>
+        </div>
+        ${m.summary?`<p style="color:#5C4D3C;font-size:13px;line-height:1.6;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${m.summary}</p>`:''}
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${(m.tags||[]).map(t=>`<span class="tag-chip">${t}</span>`).join('')}
+        </div>
+      </div>`).join('');
+}
+
+function showMeeting(id) {
+  const m = state.meetings.find(x => x.id == id); if (!m) return;
+  $('meeting-detail-title').textContent = m.title;
+  $('meeting-detail-content').innerHTML = `
+    <div style="font-size:12px;color:#8C7B6B;margin-bottom:16px">📅 ${m.date||'No date'} ${m.presenter?`· <strong>${m.presenter}</strong>`:''}</div>
+    ${m.summary?`<div style="margin-bottom:14px"><div class="form-label" style="margin-bottom:6px">Summary</div><div style="background:#F5F0E8;border-radius:10px;padding:14px;font-size:13px;color:#1A1410;line-height:1.7">${m.summary}</div></div>`:''}
+    ${m.notes?`<div style="margin-bottom:14px"><div class="form-label" style="margin-bottom:6px">Notes / Action Items</div><div style="background:#FFF8E6;border-radius:10px;padding:14px;font-size:13px;color:#8C5E0A;line-height:1.7">⚡ ${m.notes}</div></div>`:''}
+    ${(m.tags||[]).length?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${(m.tags||[]).map(t=>`<span class="tag-chip">${t}</span>`).join('')}</div>`:''}
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline" onclick="editMeeting('${m.id}')">✏️ Edit</button>
+    </div>`;
+  openModal('meeting-detail-modal');
+}
+
+async function addMeeting() {
+  const title = $('mt-title').value.trim();
+  if (!title) { showToast('Please enter a title','⚠️'); return; }
+  const tags = $('mt-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const row = { id:uid(), date:$('mt-date').value, title, presenter:$('mt-presenter').value, summary:$('mt-summary').value, notes:$('mt-notes').value, tags:JSON.stringify(tags) };
+  const ok = await sbInsert('meetings', row);
+  if (!ok) { showToast('Failed to save','⚠️'); return; }
+  state.meetings.unshift({ ...row, tags });
+  renderMeetings();
+  ['mt-date','mt-title','mt-presenter','mt-summary','mt-notes','mt-tags'].forEach(id => $(id).value='');
+  closeModal('add-meeting-modal');
+  showToast('Meeting saved');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TODOS
+// ══════════════════════════════════════════════════════════════════════════════
+function setNewPrio(p) {
+  newPrio = p;
+  ['high','medium','low'].forEach(x => {
+    $('pf-'+x).style.borderColor = x === p ? '#1A1410' : 'transparent';
+    $('pf-'+x).style.fontWeight  = x === p ? '700' : '600';
+  });
+}
+
+function renderTodos() {
+  const pending = state.todos.filter(t => !t.done);
+  const done    = state.todos.filter(t => t.done);
+  $('todos-sub').textContent = `${pending.length} pending · ${done.length} done`;
+
+  const renderItem = t => `
+    <div class="todo-item ${t.done?'done':''}">
+      <div class="todo-check" onclick="toggleTodo('${t.id}',${!t.done})">${t.done?'✓':''}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;color:${t.done?'#8C7B6B':'#1A1410'};font-weight:500;text-decoration:${t.done?'line-through':'none'}">${t.text}</div>
+        ${t.due?`<div style="font-size:11px;color:#8C7B6B;margin-top:1px">📅 Due ${t.due}</div>`:''}
+      </div>
+      <span class="prio-badge" style="background:${PRIO_COLOR[t.priority]||'#E8C547'}33;color:${PRIO_COLOR[t.priority]||'#E8C547'}">${PRIO_LABEL[t.priority]||''}</span>
+      <button onclick="editTodo('${t.id}')" style="background:#F0EBE2;border:none;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0">✏️</button>
+      <button class="del-btn" onclick="trashItem('todo','${t.id}')">🗑</button>
+    </div>`;
+
+  $('todo-list').innerHTML =
+    (pending.length ? pending.map(renderItem).join('') : '<div class="empty-state" style="padding:20px">All caught up! 🎉</div>') +
+    (done.length ? `<div class="section-divider">Completed</div>${done.map(renderItem).join('')}` : '');
+}
+
+async function addTodo() {
+  const text = $('todo-input').value.trim();
+  if (!text) return;
+  const t = { id:uid(), text, done:false, priority:newPrio, due:$('todo-due').value };
+  const ok = await sbInsert('todos', t);
+  if (!ok) { showToast('Failed to save','⚠️'); return; }
+  state.todos.unshift(t);
+  renderTodos();
+  $('todo-input').value = ''; $('todo-due').value = '';
+  showToast('Task added');
+}
+
+async function toggleTodo(id, done) {
+  const t = state.todos.find(x => x.id == id);
+  if (t) t.done = done;
+  await sbUpdate('todos', id, { done });
+  renderTodos();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LAB LOG
+// ══════════════════════════════════════════════════════════════════════════════
+function setLogFilter(f) {
+  logFilter = f;
+  ['all','experiment','observation','note','protocol'].forEach(x => $('lf-'+x).classList.toggle('active', x === f));
+  renderLogs();
+}
+
+function renderLogs() {
+  const logs = logFilter === 'all' ? state.logs : state.logs.filter(l => l.type === logFilter);
+  $('logs-sub').textContent = state.logs.length + ' entr' + (state.logs.length !== 1 ? 'ies' : 'y');
+  $('log-list').innerHTML = logs.length === 0
+    ? '<div class="empty-state">No log entries yet.</div>'
+    : [...logs].reverse().map(l => {
+      const meta = LOG_META[l.type] || LOG_META.note;
+      return `
+        <div class="card log-item" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span class="log-type-label" style="background:${meta.bg};color:${meta.color}">${meta.label}</span>
+              <span style="font-size:11px;color:#8C7B6B">📅 ${l.date||'—'}</span>
+              ${l.author?`<span style="font-size:11px;color:#8C7B6B">· ${l.author}</span>`:''}
+            </div>
+            <button onclick="editLog('${l.id}')" style="background:#F0EBE2;border:none;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center">✏️</button>
+            <button class="del-btn" onclick="trashItem('log','${l.id}')">🗑</button>
+          </div>
+          <div style="font-size:13px;color:#1A1410;line-height:1.7;white-space:pre-wrap">${l.content}</div>
+        </div>`}).join('');
+}
+
+async function addLog() {
+  const content = $('lg-content').value.trim();
+  if (!content) { showToast('Please enter content','⚠️'); return; }
+  const l = { id:uid(), date:$('lg-date').value, type:$('lg-type').value, content, author:$('lg-author').value || USER_NAME };
+  const ok = await sbInsert('logs', l);
+  if (!ok) { showToast('Failed to save','⚠️'); return; }
+  state.logs.unshift(l);
+  renderLogs();
+  ['lg-date','lg-content','lg-author'].forEach(id => $(id).value='');
+  closeModal('add-log-modal');
+  showToast('Log entry saved');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MICE
+// ══════════════════════════════════════════════════════════════════════════════
+function getStrainColor(name) {
+  const s = state.strains.find(x => x.name === name);
+  return s ? s.color : '#8C7B6B';
+}
+
+const miceFilters = { strain:'', project_tag:'', host:'' };
+
+function setMiceFilter(field, val) {
+  miceFilters[field] = val;
+  // Update active states for this filter group
+  const prefixes = { strain:'strain-filter-', project_tag:'ptag-filter-', host:'host-filter-' };
+  const allId    = { strain:'strain-filter-all', project_tag:'ptag-filter-all', host:'host-filter-all' };
+  document.querySelectorAll(`[id^="${prefixes[field]}"]`).forEach(b => b.classList.remove('active'));
+  const activeId = val ? prefixes[field] + val.replace(/[^a-zA-Z0-9]/g,'_') : allId[field];
+  const btn = document.getElementById(activeId);
+  if (btn) btn.classList.add('active');
+  renderMice();
+}
+
+function buildMiceFilterBtns() {
+  const mice = state.mice;
+  // Strain
+  const strains = [...new Set(mice.map(m=>m.strain).filter(Boolean))];
+  $('strain-filter-btns').innerHTML = strains.map(s=>{
+    const color=getStrainColor(s);
+    return `<button class="log-type-btn ${miceFilters.strain===s?'active':''}" id="strain-filter-${s.replace(/[^a-zA-Z0-9]/g,'_')}" onclick="setMiceFilter('strain','${s}')" style="font-size:10px;padding:3px 8px;border-color:${color}44">${s}</button>`;
+  }).join('');
+  // Project tags
+  const tags = [...new Set(mice.map(m=>m.project_tag).filter(Boolean))];
+  $('ptag-filter-btns').innerHTML = tags.map(t=>`<button class="log-type-btn ${miceFilters.project_tag===t?'active':''}" id="ptag-filter-${t.replace(/[^a-zA-Z0-9]/g,'_')}" onclick="setMiceFilter('project_tag','${t}')" style="font-size:10px;padding:3px 8px">${t}</button>`).join('');
+  // Hosts
+  const hosts = [...new Set(mice.map(m=>m.host).filter(Boolean))];
+  $('host-filter-btns').innerHTML = hosts.map(h=>`<button class="log-type-btn ${miceFilters.host===h?'active':''}" id="host-filter-${h.replace(/[^a-zA-Z0-9]/g,'_')}" onclick="setMiceFilter('host','${h}')" style="font-size:10px;padding:3px 8px">${h}</button>`).join('');
+}
+
+function getFilteredMice() {
+  return state.mice.filter(m =>
+    (!miceFilters.strain      || m.strain      === miceFilters.strain) &&
+    (!miceFilters.project_tag || m.project_tag === miceFilters.project_tag) &&
+    (!miceFilters.host        || m.host        === miceFilters.host)
+  );
+}
+
+function renderMice() {
+  buildMiceFilterBtns();
+  const allMice     = state.mice;
+  const filtered    = getFilteredMice();
+  const totalCages  = filtered.reduce((s,m)=>s+(Number(m.num_cages)||1),0);
+  const totalExp    = filtered.reduce((s,m)=>s+(Number(m.expCages)||Number(m.exp_cages)||0),0);
+  const muTotal     = filtered.reduce((s,m)=>s+(parseInt(m.matingUnit||m.mating_unit)||0),0);
+
+  $('mice-sub').textContent = `${allMice.length} records · showing ${filtered.length}`;
+
+  // Stats bar
+  $('mice-stats-bar').innerHTML = [
+    { label:'Total Cages', val:totalCages, color:'#4D96FF', bg:'#EEF4FF', icon:'🧺' },
+    { label:'Exp. Cages Used', val:totalExp, color:'#FF7E5F', bg:'#FFF1EE', icon:'🔬' },
+    { label:'Total Mating Units', val:muTotal||0, color:'#6BCB77', bg:'#F0FBF0', icon:'🐣' },
+  ].map(s=>`<div style="background:${s.bg};border-radius:14px;padding:16px 20px;border:1.5px solid ${s.color}33">
+    <div style="font-size:22px;margin-bottom:4px">${s.icon}</div>
+    <div style="font-family:'DM Serif Display',serif;font-size:28px;color:${s.color};line-height:1">${s.val}</div>
+    <div style="font-size:11px;font-weight:600;color:#8C7B6B;margin-top:4px">${s.label}</div>
+  </div>`).join('');
+
+  $('mice-rows').innerHTML = filtered.length === 0
+    ? '<div class="empty-state">No cages match the current filters.</div>'
+    : filtered.map(m => {
+      const color = getStrainColor(m.strain);
+      const exp   = Number(m.expCages)||Number(m.exp_cages)||0;
+      const female = m.female_count ?? m.female ?? 0;
+      const male   = m.male_count   ?? m.male   ?? 0;
+      return `<div class="mice-tr" style="cursor:pointer" onclick="editMouse('${m.id}')">
+        <div style="font-size:11px;color:#1A1410;font-family:'DM Mono',monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.cageNo||m.cage_no||'—'}</div>
+        <div><span class="strain-badge" style="background:${color}22;color:${color}">${m.strain||'—'}</span></div>
+        <div style="font-size:12px;color:#5C4D3C">${m.matingUnit||m.mating_unit||'—'}</div>
+        <div style="font-size:12px;color:#FF7E5F;font-weight:600">${female||'—'}</div>
+        <div style="font-size:12px;color:#4D96FF;font-weight:600">${male||'—'}</div>
+        <div>${dots}</div>
+        <div style="font-size:11px;color:#5C4D3C;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.host||'—'}</div>
+        <div style="font-size:11px;color:#4D96FF;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.project_tag||'—'}</div>
+        <div style="font-size:11px;color:#8C7B6B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.notes||''}</div>
+        <button class="del-btn" onclick="event.stopPropagation();trashItem('mouse','${m.id}')">🗑</button>
+      </div>`;
+    }).join('');
+}
+
+function refreshStrainDropdown() {
+  const sel = $('mc-strain');
+  sel.innerHTML = state.strains.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+}
+
+function renderStrainList() {
+  $('strain-list').innerHTML = state.strains.map(s => `
+    <div class="strain-item">
+      <div style="width:20px;height:20px;border-radius:5px;background:${s.color};flex-shrink:0"></div>
+      <span style="font-size:13px;font-weight:600;color:#1A1410;flex:1">${s.name}</span>
+      <button class="del-btn btn-sm" onclick="deleteStrain('${s.id}')">🗑</button>
+    </div>`).join('');
+}
+
+async function addMouse() {
+  const numCages = parseInt($('mc-num-cages').value)||1;
+  const rawNos = $('mc-cage-nos').value.trim();
+  // Parse cage numbers from textarea (comma or newline separated)
+  const parsedNos = rawNos ? rawNos.split(/[,\n]+/).map(s=>s.trim()).filter(Boolean) : [];
+  // Build cage_no string: use provided or auto-generate as "Group (n cages)"
+  const cage_no = parsedNos.length > 0 ? parsedNos.join(', ') : `${numCages} cage${numCages>1?'s':''}`;
+  const pt = $('mc-project-tag').value.trim();
+  if (!pt) { showToast('Project Tag is required','⚠️'); return; }
+  const row = {
+    id: uid(),
+    cage_no,
+    num_cages: numCages,
+    strain: $('mc-strain').value,
+    mating_unit: $('mc-mu').value,
+    female_count: parseInt($('mc-female').value)||0,
+    male_count: parseInt($('mc-male').value)||0,
+    exp_cages: parseInt($('mc-exp').value)||0,
+    host: $('mc-host').value,
+    project_tag: pt,
+    notes: $('mc-notes').value
+  };
+  const ok = await sbInsert('mice', row);
+  if (!ok) { showToast('Failed to save','⚠️'); return; }
+  state.mice.push({ ...row, cageNo:row.cage_no, matingUnit:row.mating_unit, expCages:row.exp_cages });
+  renderMice();
+  ['mc-num-cages','mc-cage-nos','mc-mu','mc-female','mc-male','mc-exp','mc-host','mc-project-tag','mc-notes'].forEach(id => { const el=$(id); if(el) el.value=id==='mc-num-cages'?'1':''; });
+  closeModal('add-mouse-modal');
+  showToast('Cage record added');
+}
+
+async function addStrain() {
+  const name = $('ns-name').value.trim();
+  if (!name) { showToast('Please enter a strain name','⚠️'); return; }
+  if (state.strains.find(s => s.name === name)) { showToast('Strain already exists','⚠️'); return; }
+  const s = { id:uid(), name, color:$('ns-color').value };
+  const ok = await sbInsert('strains', s);
+  if (!ok) { showToast('Failed to save','⚠️'); return; }
+  state.strains.push(s);
+  $('ns-name').value = '';
+  renderStrainList();
+  refreshStrainDropdown();
+  showToast('Strain added');
+}
+
+async function deleteStrain(id) {
+  if (!confirm('Delete this strain? It will not delete existing cage records.')) return;
+  await sbDelete('strains', id);
+  state.strains = state.strains.filter(s => s.id != id);
+  renderStrainList();
+  refreshStrainDropdown();
+  showToast('Strain deleted');
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EDIT FUNCTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Edit Member ──
+function editMember(id) {
+  const m = state.members.find(x => x.id == id); if (!m) return;
+  $('em-id').value       = id;
+  $('em-name').value     = m.name || '';
+  $('em-role').value     = m.role || '';
+  $('em-email').value    = m.email || '';
+  $('em-phone').value    = m.phone || '';
+  $('em-projects').value = (m.projects||[]).join(', ');
+  $('em-color').value    = m.color || '#E8C547';
+  closeModal('member-detail-modal');
+  openModal('edit-member-modal');
+}
+
+async function saveMember() {
+  const id   = $('em-id').value;
+  const name = $('em-name').value.trim();
+  if (!name) { showToast('Please enter a name','⚠️'); return; }
+  const projects = $('em-projects').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const updates  = { name, role:$('em-role').value, email:$('em-email').value, phone:$('em-phone').value, projects:JSON.stringify(projects), color:$('em-color').value };
+  await sbUpdate('members', id, updates);
+  const m = state.members.find(x => x.id == id);
+  if (m) Object.assign(m, { ...updates, projects, avatar: name[0].toUpperCase() });
+  renderMembers();
+  closeModal('edit-member-modal');
+  showToast('Member updated');
+}
+
+// ── Edit Meeting ──
+function editMeeting(id) {
+  const m = state.meetings.find(x => x.id == id); if (!m) return;
+  $('emt-id').value        = id;
+  $('emt-date').value      = m.date || '';
+  $('emt-title').value     = m.title || '';
+  $('emt-presenter').value = m.presenter || '';
+  $('emt-summary').value   = m.summary || '';
+  $('emt-notes').value     = m.notes || '';
+  $('emt-tags').value      = (m.tags||[]).join(', ');
+  closeModal('meeting-detail-modal');
+  openModal('edit-meeting-modal');
+}
+
+async function saveMeeting() {
+  const id    = $('emt-id').value;
+  const title = $('emt-title').value.trim();
+  if (!title) { showToast('Please enter a title','⚠️'); return; }
+  const tags    = $('emt-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const updates = { date:$('emt-date').value, title, presenter:$('emt-presenter').value, summary:$('emt-summary').value, notes:$('emt-notes').value, tags:JSON.stringify(tags) };
+  await sbUpdate('meetings', id, updates);
+  const m = state.meetings.find(x => x.id == id);
+  if (m) Object.assign(m, { ...updates, tags });
+  renderMeetings();
+  closeModal('edit-meeting-modal');
+  showToast('Meeting updated');
+}
+
+// ── Edit Todo ──
+function editTodo(id) {
+  const t = state.todos.find(x => x.id == id); if (!t) return;
+  $('et-id').value       = id;
+  $('et-text').value     = t.text || '';
+  $('et-due').value      = t.due || '';
+  $('et-priority').value = t.priority || 'medium';
+  openModal('edit-todo-modal');
+}
+
+async function saveTodo() {
+  const id   = $('et-id').value;
+  const text = $('et-text').value.trim();
+  if (!text) { showToast('Please enter task text','⚠️'); return; }
+  const updates = { text, due:$('et-due').value, priority:$('et-priority').value };
+  await sbUpdate('todos', id, updates);
+  const t = state.todos.find(x => x.id == id);
+  if (t) Object.assign(t, updates);
+  renderTodos();
+  closeModal('edit-todo-modal');
+  showToast('Task updated');
+}
+
+// ── Edit Log ──
+function editLog(id) {
+  const l = state.logs.find(x => x.id == id); if (!l) return;
+  $('el-id').value      = id;
+  $('el-date').value    = l.date || '';
+  $('el-type').value    = l.type || 'note';
+  $('el-author').value  = l.author || '';
+  $('el-content').value = l.content || '';
+  openModal('edit-log-modal');
+}
+
+async function saveLog() {
+  const id      = $('el-id').value;
+  const content = $('el-content').value.trim();
+  if (!content) { showToast('Please enter content','⚠️'); return; }
+  const updates = { date:$('el-date').value, type:$('el-type').value, author:$('el-author').value, content };
+  await sbUpdate('logs', id, updates);
+  const l = state.logs.find(x => x.id == id);
+  if (l) Object.assign(l, updates);
+  renderLogs();
+  closeModal('edit-log-modal');
+  showToast('Log updated');
+}
+
+// ── Edit Mouse ──
+function editMouse(id) {
+  const m = state.mice.find(x => x.id == id); if (!m) return;
+  // Populate strain dropdown first
+  const sel = $('ems-strain');
+  sel.innerHTML = state.strains.map(s => `<option value="${s.name}" ${s.name===m.strain?'selected':''}>${s.name}</option>`).join('');
+  $('ems-id').value        = id;
+  $('ems-num-cages').value = m.num_cages || m.numCages || 1;
+  $('ems-cage-nos').value  = m.cageNo || m.cage_no || '';
+  $('ems-mu').value        = m.matingUnit || m.mating_unit || '';
+  $('ems-female').value    = m.female_count ?? m.female ?? '';
+  $('ems-male').value      = m.male_count   ?? m.male   ?? '';
+  $('ems-exp').value       = m.expCages || m.exp_cages || 0;
+  $('ems-host').value      = m.host || '';
+  $('ems-notes').value     = m.notes || '';
+  openModal('edit-mouse-modal');
+}
+
+async function saveMouse() {
+  const id       = $('ems-id').value;
+  const numCages = parseInt($('ems-num-cages').value)||1;
+  const rawNos   = $('ems-cage-nos').value.trim();
+  const cage_no  = rawNos || `${numCages} cage${numCages>1?'s':''}`;
+  const updates  = {
+    cage_no,
+    num_cages:    numCages,
+    strain:       $('ems-strain').value,
+    mating_unit:  $('ems-mu').value,
+    female_count: parseInt($('ems-female').value)||0,
+    male_count:   parseInt($('ems-male').value)||0,
+    exp_cages:    parseInt($('ems-exp').value)||0,
+    host:         $('ems-host').value,
+    project_tag:  $('ems-project-tag').value,
+    notes:        $('ems-notes').value
+  };
+  await sbUpdate('mice', id, updates);
+  const m = state.mice.find(x => x.id == id);
+  if (m) Object.assign(m, { ...updates, cageNo:cage_no, matingUnit:updates.mating_unit, expCages:updates.exp_cages });
+  renderMice();
+  closeModal('edit-mouse-modal');
+  showToast('Cage record updated');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// CHEMICAL WASTE
+// ══════════════════════════════════════════════════════════════════════════════
+function renderWaste() {
+  const logs = state.waste || [];
+  const lastLog = logs[0];
+  const el = $('waste-log-list');
+  if (!el) return;
+  el.innerHTML = logs.length === 0
+    ? '<div class="empty-state" style="padding:20px">No disposal records yet.</div>'
+    : logs.map(w => `
+      <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:#F5F0E8;border-radius:10px;margin-bottom:7px">
+        <span style="font-size:18px;flex-shrink:0">🗑</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1410">${w.note||'Waste disposal'}</div>
+          <div style="font-size:11px;color:#8C7B6B;margin-top:1px">📅 ${w.date||'No date'}</div>
+        </div>
+        <button class="del-btn" onclick="deleteWasteLog('${w.id}')">🗑</button>
+      </div>`).join('');
+
+  // Show last disposal prominently
+  const lastEl = document.getElementById('waste-last-disposal');
+  if (lastEl) lastEl.textContent = lastLog ? `Last disposal: ${lastLog.date||'unknown'}` : 'No records yet';
+}
+
+async function addWasteLog() {
+  const date = $('waste-date').value;
+  const note = $('waste-note').value.trim();
+  if (!date) { showToast('Please select a date','⚠️'); return; }
+  const row = { id:uid(), date, note };
+  if (sb) await sbInsert('waste_log', row);
+  state.waste.unshift(row);
+  renderWaste();
+  $('waste-date').value=''; $('waste-note').value='';
+  showToast('Disposal logged ♻️');
+}
+
+async function deleteWasteLog(id) {
+  if (sb) await sbDelete('waste_log', id);
+  state.waste = state.waste.filter(w=>w.id!=id);
+  renderWaste();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// -80°C FREEZER
+// ══════════════════════════════════════════════════════════════════════════════
+// Layout: 3 layers × 6 drawers × (7 rows × 4 cols)
+const FREEZER_LAYERS  = 3;
+const FREEZER_DRAWERS = 6;
+const FREEZER_ROWS    = 7;
+const FREEZER_COLS    = 4;
+
+let currentDrawer = null; // { layer, drawer } when drilling into drawer
+
+function getFreezerSlot(layer, drawer, row, col) {
+  return state.freezer.find(s => s.layer==layer && s.drawer==drawer && s.row==row && s.col==col) || null;
+}
+
+function renderFreezer() {
+  const searchQ = ($('freezer-search')?.value||'').toLowerCase().trim();
+  const container = $('freezer-front-view');
+  if (!container) return;
+
+  if (currentDrawer) {
+    renderDrawerInterior(currentDrawer.layer, currentDrawer.drawer, searchQ);
+    return;
+  }
+
+  // Build front view
+  let html = '';
+  for (let layer = 1; layer <= FREEZER_LAYERS; layer++) {
+    html += `<div class="freezer-layer">
+      <div class="freezer-layer-label">Layer ${layer}</div>
+      <div class="freezer-drawers">`;
+    for (let drawer = 1; drawer <= FREEZER_DRAWERS; drawer++) {
+      const slots = state.freezer.filter(s => s.layer==layer && s.drawer==drawer);
+      const filled = slots.filter(s => s.label||s.host||s.tissue||s.project);
+      // Check if any slot matches search
+      const hasMatch = searchQ && slots.some(s => slotMatchesSearch(s, searchQ));
+      let dots = '';
+      for (let r=1; r<=FREEZER_ROWS; r++) {
+        for (let col=1; col<=FREEZER_COLS; col++) {
+          const slot = getFreezerSlot(layer,drawer,r,col);
+          const isFilled = slot && (slot.label||slot.host||slot.tissue||slot.project);
+          const isHit = searchQ && slot && slotMatchesSearch(slot, searchQ);
+          dots += `<div class="freezer-slot-dot ${isHit?'search-hit':isFilled?'filled':''}"></div>`;
+        }
+      }
+      html += `<div class="freezer-drawer ${filled.length?'has-data':''} ${hasMatch?'':''}${hasMatch?'search-match':''}"
+        onclick="openDrawer(${layer},${drawer})"
+        style="${hasMatch?'border-color:#E8C547;box-shadow:0 0 0 2px #E8C54766':''}">
+        <div class="freezer-drawer-num">D${drawer}</div>
+        <div style="font-size:11px;font-weight:600;color:${filled.length?'#1A1410':'#C0BBAF'};margin-top:2px">${filled.length?filled.length+' boxes':''}</div>
+        <div class="freezer-drawer-preview">${dots}</div>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  container.innerHTML = html;
+
+  // Search results summary
+  const srEl = $('freezer-search-results');
+  if (searchQ) {
+    const hits = state.freezer.filter(s => slotMatchesSearch(s, searchQ));
+    if (hits.length) {
+      srEl.classList.remove('hidden');
+      srEl.innerHTML = `<div style="font-size:12px;font-weight:700;color:#8C7B6B;margin-bottom:10px">Found ${hits.length} matching slot${hits.length>1?'s':''} — highlighted in yellow</div>` +
+        hits.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#FFF8E6;border-radius:8px;margin-bottom:6px;font-size:12px">
+          <span style="font-weight:700;color:#1A1410;font-family:'DM Mono',monospace">L${s.layer}·D${s.drawer}·R${s.row}C${s.col}</span>
+          <span style="color:#5C4D3C">${s.label||''}</span>
+          ${s.tissue?`<span class="m-tag">${s.tissue}</span>`:''}
+          ${s.project?`<span class="m-tag">${s.project}</span>`:''}
+          ${s.host?`<span style="color:#8C7B6B">· ${s.host}</span>`:''}
+          <button class="btn btn-outline btn-sm" style="margin-left:auto;font-size:10px" onclick="openDrawer(${s.layer},${s.drawer})">View Drawer</button>
+        </div>`).join('');
+    } else {
+      srEl.classList.remove('hidden');
+      srEl.innerHTML = `<div style="color:#8C7B6B;font-size:13px">No slots match "${searchQ}"</div>`;
+    }
+  } else {
+    srEl.classList.add('hidden');
+  }
+}
+
+function slotMatchesSearch(s, q) {
+  if (!q||!s) return false;
+  return [s.label,s.host,s.tissue,s.species,s.project,s.notes].some(v => v&&String(v).toLowerCase().includes(q));
+}
+
+function openDrawer(layer, drawer) {
+  currentDrawer = { layer, drawer };
+  renderDrawerInterior(layer, drawer, ($('freezer-search')?.value||'').toLowerCase().trim());
+}
+
+function closeDrawer() {
+  currentDrawer = null;
+  renderFreezer();
+}
+
+function renderDrawerInterior(layer, drawer, searchQ) {
+  const container = $('freezer-front-view');
+  let grid = '';
+  // Build 7 rows × 4 cols grid (left-to-right = front view from right)
+  for (let row = 1; row <= FREEZER_ROWS; row++) {
+    for (let col = 1; col <= FREEZER_COLS; col++) {
+      const slot = getFreezerSlot(layer, drawer, row, col);
+      const filled = slot && (slot.label||slot.host||slot.tissue||slot.project);
+      const isHit  = searchQ && slot && slotMatchesSearch(slot, searchQ);
+      grid += `<div class="drawer-cell ${filled?'filled':''} ${isHit?'search-match':''}"
+        onclick="openSlotEdit(${layer},${drawer},${row},${col})">
+        <div class="drawer-cell-pos">R${row}C${col}</div>
+        <div class="drawer-cell-label">${slot?.label||''}</div>
+        <div class="drawer-cell-sub">${slot?.tissue||''} ${slot?.project?'· '+slot.project:''}</div>
+        ${slot?.host?`<div class="drawer-cell-sub" style="color:#4D96FF">${slot.host}</div>`:''}
+      </div>`;
+    }
+  }
+  container.innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button class="btn btn-outline btn-sm" onclick="closeDrawer()">← Back</button>
+      <div style="font-family:'DM Serif Display',serif;font-size:18px;color:#1A1410">Layer ${layer} · Drawer ${drawer}</div>
+      <div style="font-size:12px;color:#8C7B6B;margin-left:4px">(view from right, left→right = front→back)</div>
+    </div>
+    <div class="drawer-grid">${grid}</div>`;
+}
+
+function openSlotEdit(layer, drawer, row, col) {
+  const slot = getFreezerSlot(layer, drawer, row, col) || {};
+  $('fs-layer').value   = layer;
+  $('fs-drawer').value  = drawer;
+  $('fs-row').value     = row;
+  $('fs-col').value     = col;
+  $('freezer-slot-title').textContent = `Layer ${layer} · Drawer ${drawer} · R${row}C${col}`;
+  $('fs-label').value   = slot.label   || '';
+  $('fs-host').value    = slot.host    || '';
+  $('fs-species').value = slot.species || '';
+  $('fs-tissue').value  = slot.tissue  || '';
+  $('fs-project').value = slot.project || '';
+  $('fs-notes').value   = slot.notes   || '';
+  openModal('freezer-slot-modal');
+}
+
+async function saveFreezerSlot() {
+  const layer  = parseInt($('fs-layer').value);
+  const drawer = parseInt($('fs-drawer').value);
+  const row    = parseInt($('fs-row').value);
+  const col    = parseInt($('fs-col').value);
+  const existing = getFreezerSlot(layer, drawer, row, col);
+  const data = {
+    layer, drawer, row, col,
+    label:   $('fs-label').value.trim(),
+    host:    $('fs-host').value.trim(),
+    species: $('fs-species').value.trim(),
+    tissue:  $('fs-tissue').value.trim(),
+    project: $('fs-project').value.trim(),
+    notes:   $('fs-notes').value.trim(),
+  };
+  if (existing) {
+    if (sb) await sbUpdate('freezer_slots', existing.id, data);
+    Object.assign(existing, data);
+  } else {
+    const row2 = { id:uid(), ...data };
+    if (sb) await sbInsert('freezer_slots', row2);
+    state.freezer.push(row2);
+  }
+  closeModal('freezer-slot-modal');
+  renderDrawerInterior(layer, drawer, ($('freezer-search')?.value||'').toLowerCase().trim());
+  showToast('Slot saved');
+}
+
+async function clearFreezerSlot() {
+  const layer  = parseInt($('fs-layer').value);
+  const drawer = parseInt($('fs-drawer').value);
+  const row    = parseInt($('fs-row').value);
+  const col    = parseInt($('fs-col').value);
+  const existing = getFreezerSlot(layer, drawer, row, col);
+  if (existing) {
+    if (sb) await sbDelete('freezer_slots', existing.id);
+    state.freezer = state.freezer.filter(s => s.id !== existing.id);
+  }
+  closeModal('freezer-slot-modal');
+  renderDrawerInterior(layer, drawer, '');
+  showToast('Slot cleared');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TRASH
+// ══════════════════════════════════════════════════════════════════════════════
+const TRASH_ICON = { meeting:'📋', todo:'✅', log:'📓', member:'👥', mouse:'🐭', strain:'🧬' };
+
+function renderTrash() {
+  const trash = state.trash;
+  const badge = $('trash-badge');
+  if (trash.length > 0) { badge.textContent = trash.length; badge.classList.remove('hidden'); }
+  else { badge.classList.add('hidden'); }
+
+  $('trash-list').innerHTML = trash.length === 0
+    ? '<div class="empty-state">Trash is empty 🎉</div>'
+    : trash.map(t => {
+      const item = t.item || {};
+      const label = item.name || item.title || item.text || item.cageNo || item.content?.substring(0,40) || '(item)';
+      return `<div class="card trash-item">
+        <div style="font-size:24px;flex-shrink:0">${TRASH_ICON[t.type]||'📄'}</div>
+        <div class="trash-meta">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+            <span class="trash-type-badge">${t.type}</span>
+            <span style="font-size:11px;color:#8C7B6B">${t.deletedAt||''}</span>
+          </div>
+          <div style="font-size:13px;font-weight:600;color:#1A1410;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${label}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="restoreItem('${t.id}','${t.type}')">↩ Restore</button>
+        <button class="del-btn" onclick="permDelete('${t.id}','${t.type}')" title="Permanently delete">✕</button>
+      </div>`;
+    }).join('');
+}
+
+async function trashItem(type, id) {
+  const tableMap  = { meeting:'meetings', todo:'todos', log:'logs', member:'members', mouse:'mice', strain:'strains' };
+  const stateMap  = { meeting:'meetings', todo:'todos', log:'logs', member:'members', mouse:'mice', strain:'strains' };
+  const source    = state[stateMap[type]];
+  const item      = source?.find(x => x.id == id);
+  if (!item) return;
+  const deletedAt = new Date().toLocaleDateString('en-US');
+  // Remove from source table
+  await sbDelete(tableMap[type], id);
+  // Insert into trash
+  await sbInsert('trash', { id: item.id, type, item_json: JSON.stringify(item), deleted_at: deletedAt });
+  // Update local state
+  state[stateMap[type]] = source.filter(x => x.id != id);
+  state.trash.unshift({ id:item.id, type, item, deletedAt });
+  renderAll();
+  closeModal('meeting-detail-modal'); closeModal('member-detail-modal');
+  showToast('Moved to trash — restore anytime','🗑');
+}
+
+async function restoreItem(id, type) {
+  const t = state.trash.find(x => x.id == id && x.type === type);
+  if (!t) return;
+  const tableMap = { meeting:'meetings', todo:'todos', log:'logs', member:'members', mouse:'mice', strain:'strains' };
+  const stateMap = { meeting:'meetings', todo:'todos', log:'logs', member:'members', mouse:'mice', strain:'strains' };
+  // Re-insert into original table
+  const item = {...t.item};
+  // Fix snake_case for mice
+  if (type === 'mouse') {
+    item.cage_no     = item.cageNo     || item.cage_no;
+    item.mating_unit = item.matingUnit || item.mating_unit;
+    item.exp_cages   = item.expCages   || item.exp_cages || 0;
+    delete item.cageNo; delete item.matingUnit; delete item.expCages;
+  }
+  if (type === 'member' && Array.isArray(item.projects)) {
+    item.projects = JSON.stringify(item.projects);
+    delete item.avatar;
+  }
+  if (type === 'meeting' && Array.isArray(item.tags)) {
+    item.tags = JSON.stringify(item.tags);
+  }
+  await sbInsert(tableMap[type], item);
+  await sbDelete('trash', id);
+  state.trash = state.trash.filter(x => !(x.id == id && x.type === type));
+  if (stateMap[type]) state[stateMap[type]].push(t.item);
+  renderAll();
+  showToast('Item restored ↩');
+}
+
+async function permDelete(id, type) {
+  if (!confirm('Permanently delete this item? This cannot be undone.')) return;
+  await sbDelete('trash', id);
+  state.trash = state.trash.filter(x => !(x.id == id && x.type === type));
+  renderTrash();
+  showToast('Permanently deleted');
+}
+
+async function clearTrash() {
+  if (!state.trash.length) return;
+  if (!confirm(`Permanently delete all ${state.trash.length} item(s)? This cannot be undone.`)) return;
+  if (sb) await sb.from('trash').delete().neq('id','__none__');
+  state.trash = [];
+  renderTrash();
+  showToast('Trash emptied');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════════════════════════════
+$('today-date').textContent = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+
+// Apply lab branding from localStorage
+function applyLabBranding() {
+  const nameEl = $('topbar-lab-name');
+  const subEl  = $('topbar-lab-sub');
+  if (nameEl) nameEl.textContent = LAB_NAME;
+  if (subEl)  subEl.textContent  = LAB_SUB;
+  document.title = LAB_NAME;
+}
+applyLabBranding();
+
+// Pre-fill settings modal
+$('user-name-input').value = USER_NAME;
+
+// Default date fields to today
+document.querySelectorAll('input[type=date]').forEach(el => {
+  el.value = new Date().toISOString().split('T')[0];
+});
+// Set waste date default
+const wasteDate = $('waste-date');
+if (wasteDate) wasteDate.value = new Date().toISOString().split('T')[0];
+
+// Auto-fill author with user name
+$('lg-author').value = USER_NAME;
+
+setNewPrio('medium');
+
+// Start on Overview — hide all other tabs
+TABS.forEach(t => { if (t !== 'overview') { const el = document.getElementById('tab-'+t); if(el) el.classList.add('hidden'); } });
+const navMembers = document.getElementById('nav-members');
+if (navMembers) navMembers.classList.remove('active');
+
+// Welcome overlay — auto-dismiss after 8s or on click
+function dismissWelcome() {
+  const el = $('welcome-overlay');
+  if (!el) return;
+  el.classList.add('hiding');
+  setTimeout(() => el.remove(), 380);
+}
+setTimeout(dismissWelcome, 8000);
+
+// Init Supabase and load data
+initSupabase();
+loadAll().then(() => { refreshStrainDropdown(); renderStrainList(); });
+</script>
+</body>
+</html>
