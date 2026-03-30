@@ -19,6 +19,8 @@ let state = {
   trash:    [],
   waste:    [],
   freezer:  [],
+  freezerDrawerColors: [],
+  freezerHostColors:   [],
 };
 
 // ── Load all data from Supabase ───────────────────────────────────────────────
@@ -26,7 +28,7 @@ async function loadAll() {
   if (!sb) { renderAll(); return; }
   try {
     showToast('Loading…', '⏳');
-    const [members, meetings, todos, logs, mice, strains, onboard, trash, waste, freezer] =
+    const [members, meetings, todos, logs, mice, strains, onboard, trash, waste, freezer, freezerDrawerColors, freezerHostColors] =
       await Promise.all([
         sbGet('members',       { order: 'created_at', asc: true  }),
         sbGet('meetings',      { order: 'created_at', asc: false }),
@@ -37,7 +39,9 @@ async function loadAll() {
         sbGet('onboarding',    { order: 'created_at', asc: true  }),
         sbGet('trash',         { order: 'deleted_at', asc: false }),
         sbGet('waste_log',     { order: 'created_at', asc: false }),
-        sbGet('freezer_slots', { order: 'created_at', asc: true  }),
+        sbGet('freezer_slots',         { order: 'created_at', asc: true  }),
+        sbGet('freezer_drawer_colors', { order: 'created_at', asc: true  }),
+        sbGet('freezer_host_colors',   { order: 'created_at', asc: true  }),
       ]);
 
     state.members  = members.map(m => ({
@@ -64,7 +68,9 @@ async function loadAll() {
       item: typeof t.item_json === 'string' ? JSON.parse(t.item_json || '{}') : (t.item_json || {}),
     }));
     state.waste   = waste   || [];
-    state.freezer = freezer || [];
+    state.freezer             = freezer || [];
+    state.freezerDrawerColors = freezerDrawerColors || [];
+    state.freezerHostColors   = freezerHostColors || [];
   } catch (e) {
     console.error(e);
     showToast('Failed to load data', '⚠️');
