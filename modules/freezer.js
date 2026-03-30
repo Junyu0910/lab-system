@@ -5,6 +5,7 @@
 // ╚══════════════════════════════════════════════════════════════╝
 
 let currentDrawer = null;
+let selectedSlots = new Set();
 
 // ── Drawer color helpers (shared) ─────────────────────────────────────────────
 function getDrawerColorRecord(layer, drawer) {
@@ -47,7 +48,7 @@ function getHostColorRecord(hostName) {
   return state.freezerHostColors.find(h => h.name && h.name.toLowerCase() === hostName.toLowerCase()) || null;
 }
 function getHostColor(hostName) {
-return getHostColorRecord(hostName)?.color || null;
+  return getHostColorRecord(hostName)?.color || null;
 }
 async function setHostColor(name, color) {
   const existing = getHostColorRecord(name);
@@ -92,109 +93,7 @@ function renderHostColorPanel() {
 
       <!-- Existing entries -->
       <div style="display:flex;flex-wrap:wrap;gap:8px;${entries.length ? 'margin-bottom:14px' : ''}">
-        ${entries.map(([name, color]) => `
-          <div style="display:inline-flex;align-items:center;gap:7px;background:#F5F0E8;border-radius:8px;padding:6px 10px;border:1.5px solid ${color}66">
-            <div style="width:12px;height:12px;border-radius:50%;background:${color};flex-shrink:0;border:1px solid rgba(0,0,0,.1)"></div>
-            <span style="font-size:12px;font-weight:600;color:#1A1410">${name}</span>
-            <input type="color" value="${color}"
-              style="width:22px;height:22px;border:none;border-radius:4px;cursor:pointer;background:transparent;padding:1px"
-              title="Change color"
-              onchange="setHostColor('${name}', this.value)">
-            <button onclick="removeHostColor('${name}')"
-              style="background:none;border:none;cursor:pointer;color:#C0BBAF;font-size:13px;line-height:1;padding:0 2px"
-              title="Remove">✕</button>
-          </div>`).join('')}
-        ${entries.length === 0 ? `<div style="font-size:12px;color:#C0BBAF">No host colors set yet.</div>` : ''}
-      </div>
-
-      <!-- Add new -->
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <input type="text" id="new-host-name" placeholder="Host name…"
-          style="width:160px;font-size:12px;padding:6px 10px"
-          list="host-name-suggestions"
-          onkeydown="if(event.key==='Enter') addHostColorFromInput()">
-        <datalist id="host-name-suggestions">
-          ${unassigned.map(h => `<option value="${h}">`).join('')}
-        </datalist>
-        <input type="color" id="new-host-color" value="#4D96FF"
-          style="width:36px;height:34px;border:none;border-radius:8px;cursor:pointer;background:transparent;padding:2px">
-        <button class="btn btn-dark btn-sm" onclick="addHostColorFromInput()">+ Add</button>
-      </div>
-    </div>`;
-}
-
-function addHostColorFromInput() {
-  const nameEl  = $('new-host-name');
-  const colorEl = $('new-host-color');
-  const name    = nameEl?.value.trim();
-  if (!name) { showToast('Please enter a host name', '⚠️'); return; }
-  setHostColor(name, colorEl?.value || '#4D96FF');
-  if (nameEl)  nameEl.value  = '';
-  if (colorEl) colorEl.value = '#4D96FF';
-}
-
-// ── Slot helpers ──────────────────────────────────────────────────────────────
-function getFSlot(layer, drawer, row, col) {
-  return state.freezer.find(s => s.layer == layer && s.drawer == drawer && s.row == row && s.col == col) || null;
-}
-function slotMatch(s, q) {
-  if (!q || !s) return false;
-  return [s.label, s.host, s.tissue, s.species, s.project, s.notes].some(v => v && String(v).toLowerCase().includes(q));
-}
-
-// ── Freezer overview ──────────────────────────────────────────────────────────
-function renderFreezer() {
-  const q         = ($('freezer-search')?.value || '').toLowerCase().trim();
-  const container = $('freezer-view'); if (!container) return;
-  if (currentDrawer) { renderDrawerInside(currentDrawer.layer, currentDrawer.drawer, q); return; }
-
-  let html = renderHostColorPanel();
-
-  for (let layer = 1; layer <= FREEZER_LAYERS; layer++) {
-    html += `
-      <div style="margin-bottom:20px">
-        <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:#8C7B6B;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px">Layer ${layer}</div>
-        <div class="freezer-drawers">`;
-
-    for (let drawer = 1; drawer <= FREEZER_DRAWERS; drawer++) {
-      const slots  = state.freezer.filter(s => s.layer == layer && s.drawer == drawer);
-      const filled = slots.filter(s => s.label || s.host || s.tissue || s.project);
-      const hasHit = q && slots.some(s => slotMatch(s, q));
-      const dColor = getDrawerColor(layer, drawer);
-
-      let dots = '';
-      for (let r = 1; r <= FREEZER_ROWS; r++) {
-        for (let col = 1; col <= FREEZER_COLS; col++) {
-          const sl       = getFSlot(layer, drawer, r, col);
-          const f        = sl && (sl.label || sl.host || sl.tissue || sl.project);
-          const h        = q && sl && slotMatch(sl, q);
-          // Host color takes priority over drawer color for individual dots
-          const hostCol  = f && sl?.host ? getHostColor(sl.host) : null;
-          const dotColor = h ? null : (hostCol || (dColor && f ? dColor : null));
-          dots += `<div class="fd ${h ? 'hit' : f ? 'on' : ''}" style="${dotColor ? `background:${dotColor};opacity:0.9` : ''}"></div>`;
-        }
-      }
-
-      const borderStyle = dColor
-        ? `border-color:${dColor};box-shadow:0 2px 10px ${dColor}33`
-        : (hasHit ? 'border-color:#E8C547;box-shadow:0 0 0 2px #E8C54766' : '');
-      const drawerBg = dColor ? `background:${dColor}11` : '';
-
-      html += `
-        <div class="freezer-drawer ${filled.length ? 'has-data' : ''}" style="${borderStyle};${drawerBg}" onclick="openDrawer(${layer},${drawer})">
-          <div class="freezer-drawer-num">D${drawer}</div>
-          <div style="font-size:11px;font-weight:600;color:${dColor || (filled.length ? '#1A1410' : '#C0BBAF')};margin-top:2px">${filled.length ? filled.length + ' boxes' : ''}</div>
-          <div class="freezer-preview">${dots}</div>
-          <input type="color" class="drawer-color-btn" value="${dColor || '#4D96FF'}" title="Set drawer color"
-            onclick="event.stopPropagation()" oninput="event.stopPropagation()"
-            onchange="event.stopPropagation();setDrawerColor(${layer},${drawer},this.value)">
-        </div>`;
-    }
-    html += '</div></div>';
-  }
-  container.innerHTML = html;
-
-  // Search results
+@@ -170,148 +199,235 @@ function renderFreezer() {
   const srEl = $('freezer-search-results');
   if (q) {
     const hits = state.freezer.filter(s => slotMatch(s, q));
@@ -220,8 +119,64 @@ function renderFreezer() {
 }
 
 // ── Drawer inside view ────────────────────────────────────────────────────────
-function openDrawer(layer, drawer) { currentDrawer = { layer, drawer }; renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim()); }
-function closeDrawer()             { currentDrawer = null; renderFreezer(); }
+function openDrawer(layer, drawer) { currentDrawer = { layer, drawer }; selectedSlots.clear(); renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim()); }
+function closeDrawer()             { currentDrawer = null; selectedSlots.clear(); renderFreezer(); }
+
+function slotKey(layer, drawer, row, col) {
+  return `${layer}-${drawer}-${row}-${col}`;
+}
+
+function parseSlotKey(key) {
+  const [layer, drawer, row, col] = key.split('-').map(Number);
+  return { layer, drawer, row, col };
+}
+
+function handleDrawerCellClick(layer, drawer, row, col, e) {
+  const key = slotKey(layer, drawer, row, col);
+  if (e?.shiftKey || e?.ctrlKey || e?.metaKey) {
+    if (selectedSlots.has(key)) selectedSlots.delete(key);
+    else selectedSlots.add(key);
+    renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
+    return;
+  }
+  selectedSlots.clear();
+  openSlotEdit(layer, drawer, row, col);
+}
+
+function clearSelectedSlots() {
+  selectedSlots.clear();
+  if (currentDrawer) {
+    renderDrawerInside(currentDrawer.layer, currentDrawer.drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
+  }
+}
+
+function openBatchSlotEdit() {
+  if (!currentDrawer || !selectedSlots.size) return;
+  const targets = [...selectedSlots].map(parseSlotKey)
+    .filter(s => s.layer === currentDrawer.layer && s.drawer === currentDrawer.drawer);
+  if (!targets.length) { showToast('No selected slots in current drawer', '⚠️'); return; }
+
+  const first = getFSlot(targets[0].layer, targets[0].drawer, targets[0].row, targets[0].col) || {};
+  $('fs-layer').value = currentDrawer.layer;
+  $('fs-drawer').value = currentDrawer.drawer;
+  $('fs-row').value = '';
+  $('fs-col').value = '';
+  $('fs-mode').value = 'batch';
+  $('fs-batch-keys').value = JSON.stringify(targets);
+  $('fs-title').textContent = `Batch Edit · ${targets.length} Slots`;
+  $('fs-label').value   = first.label   || '';
+  $('fs-host').value    = first.host    || '';
+  $('fs-species').value = first.species || '';
+  $('fs-tissue').value  = first.tissue  || '';
+  $('fs-project').value = first.project || '';
+  $('fs-notes').value   = first.notes   || '';
+  updateSlotHostColorHint(first.host || '');
+  const summary = targets.map(s => `R${s.row}C${s.col}`).join(', ');
+  $('fs-batch-summary').textContent = `Selected: ${summary}`;
+  $('fs-batch-summary').classList.remove('hidden');
+  $('fs-clear-btn').classList.add('hidden');
+  openModal('freezer-slot-modal');
+}
 
 function renderDrawerInside(layer, drawer, q) {
   const container = $('freezer-view');
@@ -237,9 +192,11 @@ function renderDrawerInside(layer, drawer, q) {
       const cellColor = hostCol || dColor;
       const cellStyle = filled && cellColor ? `background:${cellColor}18;border-color:${cellColor}66` : '';
       const hostTextColor = hostCol || dColor || '#4D96FF';
+      const key = slotKey(layer, drawer, row, col);
+      const selected = selectedSlots.has(key);
 
       grid += `
-        <div class="drawer-cell ${filled ? 'filled' : ''} ${hit ? 'match' : ''}" style="${cellStyle}" onclick="openSlotEdit(${layer},${drawer},${row},${col})">
+        <div class="drawer-cell ${filled ? 'filled' : ''} ${hit ? 'match' : ''}" style="${cellStyle}${selected ? ';box-shadow:0 0 0 2px #1A1410 inset, 0 0 0 2px #1A141055' : ''}" onclick="handleDrawerCellClick(${layer},${drawer},${row},${col},event)">
           <div class="dc-pos">R${row}C${col}</div>
           <div class="dc-label">${sl?.label || ''}</div>
           <div class="dc-sub">${sl?.tissue || ''}${sl?.project ? ' · ' + sl.project : ''}</div>
@@ -278,9 +235,15 @@ function renderDrawerInside(layer, drawer, q) {
         <input type="color" id="drawer-color-inside" value="${dColor || '#4D96FF'}"
           style="width:28px;height:22px;border:none;border-radius:5px;cursor:pointer;background:transparent;padding:1px"
           onchange="setDrawerColor(${layer},${drawer},this.value)">
-       ${dColor ? `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 8px" onclick="clearDrawerColor(${layer},${drawer})">✕ Remove</button>` : ''}
+
+        ${dColor ? `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 8px" onclick="clearDrawerColor(${layer},${drawer})">✕ Remove</button>` : ''}
       </div>
-      <div style="font-size:12px;color:#8C7B6B">(Right:Front; Left:Back)</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="openBatchSlotEdit()" ${selectedSlots.size ? '' : 'disabled'}>Batch Edit Selected (${selectedSlots.size})</button>
+        ${selectedSlots.size ? `<button class="btn btn-outline btn-sm" onclick="clearSelectedSlots()">Clear Selection</button>` : ''}
+        <span style="font-size:11px;color:#8C7B6B">Tip: Shift/Ctrl/Cmd + click to multi-select slots</span>
+      </div>
+      <div style="font-size:12px;color:#8C7B6B">(view from right)</div>
     </div>
     ${legend}
     <div class="drawer-grid">${grid}</div>`;
@@ -289,6 +252,10 @@ function renderDrawerInside(layer, drawer, q) {
 // ── Slot edit modal ───────────────────────────────────────────────────────────
 function openSlotEdit(layer, drawer, row, col) {
   const s = getFSlot(layer, drawer, row, col) || {};
+  $('fs-mode').value = 'single';
+  $('fs-batch-keys').value = '';
+  $('fs-batch-summary').classList.add('hidden');
+  $('fs-clear-btn').classList.remove('hidden');
   $('fs-layer').value = layer; $('fs-drawer').value = drawer;
   $('fs-row').value   = row;   $('fs-col').value    = col;
   $('fs-title').textContent = `Layer ${layer} · Drawer ${drawer} · R${row}C${col}`;
@@ -315,17 +282,37 @@ function updateSlotHostColorHint(hostName) {
 }
 
 async function saveFreezerSlot() {
-  const layer = parseInt($('fs-layer').value), drawer = parseInt($('fs-drawer').value),
-        row   = parseInt($('fs-row').value),   col    = parseInt($('fs-col').value);
-  const existing = getFSlot(layer, drawer, row, col);
+  const mode = $('fs-mode').value || 'single';
+  const layer = parseInt($('fs-layer').value), drawer = parseInt($('fs-drawer').value);
   const data = {
-    layer, drawer, row, col,
     label:   $('fs-label').value.trim(),   host:    $('fs-host').value.trim(),
     species: $('fs-species').value.trim(), tissue:  $('fs-tissue').value.trim(),
     project: $('fs-project').value.trim(), notes:   $('fs-notes').value.trim(),
   };
-  if (existing) { if (sb) await sbUpdate('freezer_slots', existing.id, data); Object.assign(existing, data); }
-  else          { const r = { id: uid(), ...data }; if (sb) await sbInsert('freezer_slots', r); state.freezer.push(r); }
+
+  if (mode === 'batch') {
+    const raw = $('fs-batch-keys').value || '[]';
+    let targets = [];
+    try { targets = JSON.parse(raw); } catch { targets = []; }
+    if (!targets.length) { showToast('No selected slots', '⚠️'); return; }
+    for (const t of targets) {
+      const existing = getFSlot(t.layer, t.drawer, t.row, t.col);
+      const slotData = { layer: t.layer, drawer: t.drawer, row: t.row, col: t.col, ...data };
+      if (existing) { if (sb) await sbUpdate('freezer_slots', existing.id, slotData); Object.assign(existing, slotData); }
+      else          { const r = { id: uid(), ...slotData }; if (sb) await sbInsert('freezer_slots', r); state.freezer.push(r); }
+    }
+    selectedSlots.clear();
+    closeModal('freezer-slot-modal');
+    renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
+    showToast(`Updated ${targets.length} slots`);
+    return;
+  }
+
+  const row = parseInt($('fs-row').value), col = parseInt($('fs-col').value);
+  const existing = getFSlot(layer, drawer, row, col);
+  const slotData = { layer, drawer, row, col, ...data };
+  if (existing) { if (sb) await sbUpdate('freezer_slots', existing.id, slotData); Object.assign(existing, slotData); }
+  else          { const r = { id: uid(), ...slotData }; if (sb) await sbInsert('freezer_slots', r); state.freezer.push(r); }
   closeModal('freezer-slot-modal');
   renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
   showToast('Slot saved');
