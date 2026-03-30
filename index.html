@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xu Lab · Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&family=DM+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PASSWORD GATE
+════════════════════════════════════════════════════════════ -->
+<div id="pw-overlay" class="pw-overlay">
+  <div class="pw-card">
+    <div class="pw-logo">XU</div>
+    <div class="pw-title">Xu Lab</div>
+    <div class="pw-sub">MIBAM · UMN — Enter lab password to continue</div>
+    <input class="pw-input" id="pw-input" type="password" placeholder="••••••••"
+           onkeydown="if(event.key==='Enter') checkPW()">
+    <button class="pw-btn" onclick="checkPW()">Enter</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════════ -->
+<div class="shell"><div class="app">
+
+  <!-- Sidebar Navigation -->
+  <div class="sidebar">
+    <div class="logo">XU</div>
+    <button class="nav-btn active" id="nav-overview"  onclick="switchTab('overview')">🏠<span class="nav-tooltip">Overview</span></button>
+    <button class="nav-btn"        id="nav-members"   onclick="switchTab('members')">👥<span class="nav-tooltip">Members</span></button>
+    <button class="nav-btn"        id="nav-meetings"  onclick="switchTab('meetings')">📋<span class="nav-tooltip">Meetings</span></button>
+    <button class="nav-btn"        id="nav-todos"     onclick="switchTab('todos')">✅<span class="nav-tooltip">To-Do</span></button>
+    <button class="nav-btn"        id="nav-logs"      onclick="switchTab('logs')">📸<span class="nav-tooltip">Team Moments</span></button>
+    <button class="nav-btn"        id="nav-mice"      onclick="switchTab('mice')">🐭<span class="nav-tooltip">Mice</span></button>
+    <button class="nav-btn"        id="nav-waste"     onclick="switchTab('waste')">🔗<span class="nav-tooltip">Quick Access</span></button>
+    <button class="nav-btn"        id="nav-freezer"   onclick="switchTab('freezer')">🧊<span class="nav-tooltip">-80°C Freezer</span></button>
+    <button class="nav-btn"        id="nav-trash"     onclick="switchTab('trash')">🗑<span class="nav-tooltip">Trash</span>
+      <span class="trash-badge hidden" id="trash-badge">0</span>
+    </button>
+    <div style="flex:1"></div>
+    <button class="nav-btn" onclick="openModal('setup-modal')">⚙️<span class="nav-tooltip">Settings</span></button>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="lab-name" id="topbar-lab-name">Xu Lab · Management System</div>
+        <div class="lab-sub"  id="topbar-lab-sub"></div>
+      </div>
+      <div class="topbar-right">
+        <div class="date-chip" id="today-date"></div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ══════════ OVERVIEW ══════════ -->
+      <div id="tab-overview">
+        <div class="section-head">
+          <div><div class="section-title">Overview</div><div class="section-sub" id="overview-sub">Welcome back</div></div>
+          <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat-card" style="background:#F5F0E8;border:1.5px solid #E8C54755"><div class="stat-number" id="ov-meetings" style="color:#8C6A1A">0</div><div class="stat-label">📋 Meeting Records</div></div>
+          <div class="stat-card" style="background:#EEF4FF;border:1.5px solid #4D96FF44"><div class="stat-number" id="ov-todos"    style="color:#1A5FA8">0</div><div class="stat-label">⏳ Pending Tasks</div></div>
+          <div class="stat-card" style="background:#FFF1EE;border:1.5px solid #FF7E5F44"><div class="stat-number" id="ov-urgent"   style="color:#C0392B">0</div><div class="stat-label">🔴 Urgent Items</div></div>
+        </div>
+        <div class="overview-panels">
+          <div class="overview-panel"><div class="overview-panel-title">📋 Recent Meetings</div><div id="ov-meetings-list"></div></div>
+          <div class="overview-panel"><div class="overview-panel-title">🔥 Urgent To-Dos</div><div id="ov-todos-list"></div></div>
+        </div>
+        <div class="overview-panel"><div class="overview-panel-title">✨ Recent Moments</div><div id="ov-logs-list"></div></div>
+      </div>
+
+      <!-- ══════════ MEMBERS ══════════ -->
+      <div id="tab-members" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Lab Members</div><div class="section-sub" id="members-sub">Loading…</div></div>
+          <div class="head-actions">
+            <button class="btn btn-dark" onclick="openModal('add-member-modal')">+ Add Member</button>
+          </div>
+        </div>
+        <div class="member-grid" id="member-grid"></div>
+      </div>
+
+      <!-- ══════════ MEETINGS ══════════ -->
+      <div id="tab-meetings" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Meeting Records</div><div class="section-sub" id="meetings-sub">Loading…</div></div>
+          <button class="btn btn-dark" onclick="openModal('add-meeting-modal')">+ New Record</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:#8C7B6B;flex-shrink:0">Filter by tag:</span>
+          <button class="log-type-btn active" id="tag-filter-all" onclick="setTagFilter('')" style="font-size:11px;padding:4px 10px">All</button>
+          <div id="tag-filter-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div id="meeting-list"></div>
+      </div>
+
+      <!-- ══════════ TO-DO ══════════ -->
+      <div id="tab-todos" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">To-Do</div><div class="section-sub" id="todos-sub">Loading…</div></div>
+          <div class="head-actions">
+            <button class="btn btn-sm" id="pf-high"   onclick="setNewPrio('high')"   style="background:#FF7E5F22;color:#C0392B;border:1.5px solid transparent">🔴 Urgent</button>
+            <button class="btn btn-sm" id="pf-medium" onclick="setNewPrio('medium')" style="background:#E8C54722;color:#8C5E0A;border:1.5px solid #E8C547">🟡 Medium</button>
+            <button class="btn btn-sm" id="pf-low"    onclick="setNewPrio('low')"    style="background:#6BCB7722;color:#2E7D32;border:1.5px solid transparent">🟢 Low</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;background:#fff;border-radius:14px;padding:14px;margin-bottom:18px;box-shadow:0 2px 10px rgba(0,0,0,.06)">
+          <input type="text" id="todo-input" placeholder="Add a task… press Enter" style="flex:1" onkeydown="if(event.key==='Enter') addTodo()">
+          <input type="date" id="todo-due" style="width:130px">
+          <button class="btn btn-dark" onclick="addTodo()">+ Add</button>
+        </div>
+        <div id="todo-list"></div>
+      </div>
+
+      <!-- ══════════ TEAM MOMENTS ══════════ -->
+      <div id="tab-logs" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Team Moments</div><div class="section-sub" id="logs-sub">Loading…</div></div>
+          <button class="btn btn-dark" onclick="openModal('add-log-modal')">+ New Moment</button>
+        </div>
+        <!-- Filter buttons — add one here if you add a type in config.js → MOMENT_TYPES -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+          <button class="log-type-btn active" id="lf-all"         onclick="setLogFilter('all')">All</button>
+          <button class="log-type-btn"        id="lf-celebration" onclick="setLogFilter('celebration')">🎉 Celebration</button>
+          <button class="log-type-btn"        id="lf-milestone"   onclick="setLogFilter('milestone')">🏆 Milestone</button>
+          <button class="log-type-btn"        id="lf-memory"      onclick="setLogFilter('memory')">📸 Memory</button>
+          <button class="log-type-btn"        id="lf-note"        onclick="setLogFilter('note')">📝 Note</button>
+        </div>
+        <div id="log-list"></div>
+      </div>
+
+      <!-- ══════════ MOUSE COLONY ══════════ -->
+      <div id="tab-mice" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Mouse Colony</div><div class="section-sub" id="mice-sub">Loading…</div></div>
+          <div class="head-actions">
+            <button class="btn btn-outline" onclick="openModal('strain-modal')">🧬 Strains</button>
+            <button class="btn btn-dark"    onclick="openModal('add-mouse-modal')">+ Add Record</button>
+          </div>
+        </div>
+        <!-- Stats bar -->
+        <div id="mice-stats-bar" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px"></div>
+        <!-- Filters -->
+        <div class="card" style="padding:14px 16px;margin-bottom:14px">
+          <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+            <div style="flex:1;min-width:140px">
+              <div class="form-label" style="margin-bottom:6px">Strain <span id="sf-count" style="color:#4D96FF;font-weight:700"></span></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="log-type-btn active" id="sf-all" onclick="clearMF('strain')" style="font-size:10px;padding:3px 8px">All</button>
+                <div id="sf-btns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:140px">
+              <div class="form-label" style="margin-bottom:6px">Project Tag <span id="pf-count" style="color:#4D96FF;font-weight:700"></span></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="log-type-btn active" id="pf-all" onclick="clearMF('project_tag')" style="font-size:10px;padding:3px 8px">All</button>
+                <div id="pf-btns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+              </div>
+            </div>
+            <div style="flex:1;min-width:140px">
+              <div class="form-label" style="margin-bottom:6px">Host <span id="hf-count" style="color:#4D96FF;font-weight:700"></span></div>
+              <div style="display:flex;gap:5px;flex-wrap:wrap">
+                <button class="log-type-btn active" id="hf-all" onclick="clearMF('host')" style="font-size:10px;padding:3px 8px">All</button>
+                <div id="hf-btns" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+              </div>
+            </div>
+          </div>
+          <div style="border-top:1px solid #EDE8E0;padding-top:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+            <div class="form-label" style="margin-bottom:0">Age (months)</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="number" id="age-min-filter" placeholder="Min" min="0" max="30" style="width:70px;padding:5px 8px;font-size:12px" oninput="setAgeFilter()">
+              <span style="font-size:12px;color:#8C7B6B">–</span>
+              <input type="number" id="age-max-filter" placeholder="Max" min="0" max="30" style="width:70px;padding:5px 8px;font-size:12px" oninput="setAgeFilter()">
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="clearAllFilters()" style="font-size:11px">↺ Reset All</button>
+          </div>
+        </div>
+        <!-- Table -->
+        <div class="mice-table">
+          <div class="mice-th mice-cols"><div>Cage Numbers</div><div>Strain</div><div>Mating</div><div>♀</div><div>♂</div><div>Exp.</div><div>Age</div><div>Host</div><div>Project</div><div>Notes</div><div></div></div>
+          <div id="mice-rows"></div>
+        </div>
+      </div>
+
+      <!-- ══════════ QUICK ACCESS ══════════ -->
+      <!-- Links are managed in config.js → QUICK_LINKS — no HTML edits needed -->
+      <div id="tab-waste" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Quick Access</div><div class="section-sub">Frequently used lab portals &amp; booking systems</div></div>
+        </div>
+        <div id="quick-access-links"></div>
+      </div>
+
+      <!-- ══════════ FREEZER ══════════ -->
+      <div id="tab-freezer" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">-80°C Freezer</div><div class="section-sub">3 layers · 6 drawers · 7×4 slots each</div></div>
+          <div class="head-actions">
+            <input type="text" id="freezer-search" placeholder="🔍 Search label, tissue, project…" style="width:240px;font-size:13px" oninput="renderFreezer()">
+          </div>
+        </div>
+        <div id="freezer-search-results" class="hidden" style="background:#fff;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)"></div>
+        <div id="freezer-view"></div>
+      </div>
+
+      <!-- ══════════ TRASH ══════════ -->
+      <div id="tab-trash" class="hidden">
+        <div class="section-head">
+          <div><div class="section-title">Trash</div><div class="section-sub">Items can be restored or permanently deleted</div></div>
+          <button class="btn btn-danger" onclick="clearTrash()">🗑 Empty Trash</button>
+        </div>
+        <div id="trash-list"></div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div></div><!-- /app /shell -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Welcome Overlay — click or press any key to dismiss -->
+<div class="welcome-overlay" id="welcome-overlay" onclick="dismissWelcome()">
+  <div class="welcome-card">
+    <div class="wc-icon">👋</div>
+    <div class="wc-title">Welcome back.</div>
+    <div class="wc-msg">The system is ready for use.<br>Have a good day.</div>
+    <div class="wc-hint">CLICK ANYWHERE TO CONTINUE</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODALS
+════════════════════════════════════════════════════════════ -->
+
+<!-- Settings -->
+<div class="modal-overlay" id="setup-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">⚙️ Settings</span><button class="modal-close" onclick="closeModal('setup-modal')">✕</button></div>
+    <div style="background:#F0FBF0;border:1.5px solid #6BCB77;border-radius:12px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:#1E6B30;display:flex;align-items:center;gap:10px">
+      <span style="font-size:20px">✅</span>
+      <div><strong>Connected to Supabase</strong><br><span style="font-size:11px;opacity:.8">cmadqjpqfsmgpohawzkz.supabase.co · MIBAM UMN</span></div>
+    </div>
+    <div class="form-group"><label class="form-label">Your Name (shown in logs)</label><input type="text" id="user-name-input" placeholder="e.g. Alex Chen"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('setup-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Member Detail -->
+<div class="modal-overlay" id="member-detail-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Member Profile</span><button class="modal-close" onclick="closeModal('member-detail-modal')">✕</button></div>
+    <div id="member-detail-content"></div>
+  </div>
+</div>
+
+<!-- Add Member -->
+<div class="modal-overlay" id="add-member-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Add New Member</span><button class="modal-close" onclick="closeModal('add-member-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="m-name" placeholder="Jane Smith"></div>
+      <div class="form-group"><label class="form-label">Role</label><input type="text" id="m-role" placeholder="PhD / Postdoc / PI…"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="m-email" placeholder="jane@university.edu"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input type="text" id="m-phone" placeholder="+1 (555) 000-0000"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Projects / Responsibilities (comma separated)</label><input type="text" id="m-projects" placeholder="Mouse model, Protein structure…"></div>
+    <div class="form-group">
+      <label class="form-label">Avatar Color</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+        <input type="color" id="m-color" value="#E8C547" onchange="onColorChange(this.value)" style="width:48px;height:40px;border:none;border-radius:9px;cursor:pointer;background:transparent;padding:2px;flex-shrink:0">
+        <div style="display:flex;gap:7px;flex-wrap:wrap" id="color-picker">
+          <div class="color-swatch selected" style="background:#E8C547" onclick="selectColor('#E8C547')"></div>
+          <div class="color-swatch" style="background:#FF7E5F" onclick="selectColor('#FF7E5F')"></div>
+          <div class="color-swatch" style="background:#6BCB77" onclick="selectColor('#6BCB77')"></div>
+          <div class="color-swatch" style="background:#4D96FF" onclick="selectColor('#4D96FF')"></div>
+          <div class="color-swatch" style="background:#C77DFF" onclick="selectColor('#C77DFF')"></div>
+          <div class="color-swatch" style="background:#FF6B6B" onclick="selectColor('#FF6B6B')"></div>
+          <div class="color-swatch" style="background:#20C997" onclick="selectColor('#20C997')"></div>
+          <div class="color-swatch" style="background:#F97316" onclick="selectColor('#F97316')"></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#8C7B6B;margin-top:6px">Use color box on left to pick any custom color</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-member-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="addMember()">Add Member</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Member -->
+<div class="modal-overlay" id="edit-member-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Member</span><button class="modal-close" onclick="closeModal('edit-member-modal')">✕</button></div>
+    <input type="hidden" id="em-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Full Name *</label><input type="text" id="em-name"></div>
+      <div class="form-group"><label class="form-label">Role</label><input type="text" id="em-role"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" id="em-email"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input type="text" id="em-phone"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Projects (comma separated)</label><input type="text" id="em-projects"></div>
+    <div class="form-group">
+      <label class="form-label">Avatar Color</label>
+      <div style="display:flex;align-items:center;gap:12px;margin-top:6px">
+        <input type="color" id="em-color" value="#E8C547" style="width:48px;height:40px;border:none;border-radius:9px;cursor:pointer;background:transparent;padding:2px">
+        <div style="font-size:12px;color:#8C7B6B">Pick any color</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-member-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="saveMember()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Meeting -->
+<div class="modal-overlay" id="add-meeting-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">New Meeting Record</span><button class="modal-close" onclick="closeModal('add-meeting-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="mt-date"></div>
+      <div class="form-group"><label class="form-label">Presenter</label><input type="text" id="mt-presenter" placeholder="Name"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Title *</label><input type="text" id="mt-title" placeholder="Weekly lab meeting #25 / Journal club…"></div>
+    <div class="form-group"><label class="form-label">Summary</label><textarea id="mt-summary" rows="3" placeholder="Key points discussed…"></textarea></div>
+    <div class="form-group"><label class="form-label">Notes / Action Items</label><textarea id="mt-notes" rows="3" placeholder="Follow-up tasks…"></textarea></div>
+    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input type="text" id="mt-tags" placeholder="NSFC, mouse model…"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-meeting-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="addMeeting()">Save Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meeting Detail -->
+<div class="modal-overlay" id="meeting-detail-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title" id="meeting-detail-title">Meeting Detail</span><button class="modal-close" onclick="closeModal('meeting-detail-modal')">✕</button></div>
+    <div id="meeting-detail-content"></div>
+  </div>
+</div>
+
+<!-- Edit Meeting -->
+<div class="modal-overlay" id="edit-meeting-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Meeting</span><button class="modal-close" onclick="closeModal('edit-meeting-modal')">✕</button></div>
+    <input type="hidden" id="emt-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="emt-date"></div>
+      <div class="form-group"><label class="form-label">Presenter</label><input type="text" id="emt-presenter"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Title *</label><input type="text" id="emt-title"></div>
+    <div class="form-group"><label class="form-label">Summary</label><textarea id="emt-summary" rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Notes / Action Items</label><textarea id="emt-notes" rows="3"></textarea></div>
+    <div class="form-group"><label class="form-label">Tags (comma separated)</label><input type="text" id="emt-tags"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-meeting-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="saveMeeting()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Moment -->
+<div class="modal-overlay" id="add-log-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">New Team Moment</span><button class="modal-close" onclick="closeModal('add-log-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="lg-date"></div>
+      <div class="form-group"><label class="form-label">Type</label>
+        <select id="lg-type">
+          <option value="celebration">🎉 Celebration</option>
+          <option value="milestone">🏆 Milestone</option>
+          <option value="memory">📸 Memory</option>
+          <option value="note" selected>📝 Note</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Author</label><input type="text" id="lg-author" placeholder="Your name"></div>
+    <div class="form-group"><label class="form-label">Content *</label><textarea id="lg-content" rows="5" placeholder="Share what happened, what you achieved, or what you want to remember…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-log-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="addLog()">Save Moment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Moment -->
+<div class="modal-overlay" id="edit-log-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Moment</span><button class="modal-close" onclick="closeModal('edit-log-modal')">✕</button></div>
+    <input type="hidden" id="el-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="el-date"></div>
+      <div class="form-group"><label class="form-label">Type</label>
+        <select id="el-type">
+          <option value="celebration">🎉 Celebration</option>
+          <option value="milestone">🏆 Milestone</option>
+          <option value="memory">📸 Memory</option>
+          <option value="note">📝 Note</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Author</label><input type="text" id="el-author"></div>
+    <div class="form-group"><label class="form-label">Content *</label><textarea id="el-content" rows="5"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-log-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="saveLog()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Todo -->
+<div class="modal-overlay" id="edit-todo-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Task</span><button class="modal-close" onclick="closeModal('edit-todo-modal')">✕</button></div>
+    <input type="hidden" id="et-id">
+    <div class="form-group"><label class="form-label">Task *</label><input type="text" id="et-text"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Due Date</label><input type="date" id="et-due"></div>
+      <div class="form-group"><label class="form-label">Priority</label>
+        <select id="et-priority">
+          <option value="high">🔴 Urgent</option>
+          <option value="medium">🟡 Medium</option>
+          <option value="low">🟢 Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-todo-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="saveTodo()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Cage Record -->
+<div class="modal-overlay" id="add-mouse-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">Add Cage Record</span><button class="modal-close" onclick="closeModal('add-mouse-modal')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Number of Cages *</label><input type="number" id="mc-num" placeholder="1" min="1" value="1"></div>
+      <div class="form-group"><label class="form-label">Strain</label><select id="mc-strain"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Cage Numbers (comma or newline separated)</label><textarea id="mc-cagenos" rows="2" placeholder="e.g. A-001, A-002&#10;Leave blank to auto-label"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="mc-mu" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">Exp. Cages Used</label><input type="number" id="mc-exp" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">♀ Female Count</label><input type="number" id="mc-female" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">♂ Male Count</label><input type="number" id="mc-male" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Host</label><input type="text" id="mc-host" placeholder="e.g. Alex Chen"></div>
+      <div class="form-group"><label class="form-label">Project Tag *</label><input type="text" id="mc-ptag" placeholder="e.g. NSFC-2024"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Age (months, 0–30)</label><input type="number" id="mc-age" placeholder="e.g. 6" min="0" max="30"></div>
+      <div class="form-group"><label class="form-label">Notes</label><input type="text" id="mc-notes" placeholder="Tumor model, control group…"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('add-mouse-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="addMouse()">Add Record</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Cage Record -->
+<div class="modal-overlay" id="edit-mouse-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">✏️ Edit Cage Record</span><button class="modal-close" onclick="closeModal('edit-mouse-modal')">✕</button></div>
+    <input type="hidden" id="ems-id">
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Number of Cages *</label><input type="number" id="ems-num" placeholder="1" min="1"></div>
+      <div class="form-group"><label class="form-label">Strain</label><select id="ems-strain"></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Cage Numbers</label><textarea id="ems-cagenos" rows="2"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="ems-mu" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">Exp. Cages Used</label><input type="number" id="ems-exp" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">♀ Female Count</label><input type="number" id="ems-female" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">♂ Male Count</label><input type="number" id="ems-male" placeholder="0" min="0"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Host</label><input type="text" id="ems-host"></div>
+      <div class="form-group"><label class="form-label">Project Tag *</label><input type="text" id="ems-ptag"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Age (months, 0–30)</label><input type="number" id="ems-age" placeholder="e.g. 6" min="0" max="30"></div>
+      <div class="form-group"><label class="form-label">Notes</label><input type="text" id="ems-notes"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('edit-mouse-modal')">Cancel</button>
+      <button class="btn btn-dark"    onclick="saveMouse()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Strains -->
+<div class="modal-overlay" id="strain-modal">
+  <div class="modal-box">
+    <div class="modal-head"><span class="modal-title">🧬 Mouse Strains</span><button class="modal-close" onclick="closeModal('strain-modal')">✕</button></div>
+    <div id="strain-list" style="margin-bottom:8px"></div>
+    <div style="border-top:1px solid #EDE8E0;padding-top:16px">
+      <div class="form-label" style="margin-bottom:10px">Add New Strain</div>
+      <div class="form-row" style="margin-bottom:10px">
+        <input type="text" id="ns-name" placeholder="e.g. C57BL/6N">
+        <input type="color" id="ns-color" value="#8C7B6B" style="width:100%;height:40px;border:none;border-radius:9px;cursor:pointer;background:transparent;padding:2px">
+      </div>
+      <button class="btn btn-dark" style="width:100%" onclick="addStrain()">+ Add Strain</button>
+    </div>
+  </div>
+</div>
+
+<!-- Freezer Slot Edit -->
+<div class="modal-overlay" id="freezer-slot-modal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-head"><span class="modal-title" id="fs-title">Edit Slot</span><button class="modal-close" onclick="closeModal('freezer-slot-modal')">✕</button></div>
+    <input type="hidden" id="fs-layer"><input type="hidden" id="fs-drawer">
+    <input type="hidden" id="fs-row"><input type="hidden" id="fs-col">
+    <div class="form-group"><label class="form-label">Box / Sample Label</label><input type="text" id="fs-label" placeholder="e.g. KO-Mouse-Brain-01"></div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Host</label>
+        <input type="text" id="fs-host" placeholder="e.g. Alex" oninput="updateSlotHostColorHint(this.value)">
+        <div id="fs-host-color-hint" style="display:none;align-items:center;margin-top:5px"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Species</label><input type="text" id="fs-species" placeholder="Mouse / Human…"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Tissue</label><input type="text" id="fs-tissue" placeholder="Brain / Liver…"></div>
+      <div class="form-group"><label class="form-label">Project</label><input type="text" id="fs-project" placeholder="Project name"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea id="fs-notes" rows="2" placeholder="Additional info…"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" onclick="clearFreezerSlot()">Clear Slot</button>
+      <button class="btn btn-outline"       onclick="closeModal('freezer-slot-modal')">Cancel</button>
+      <button class="btn btn-dark"          onclick="saveFreezerSlot()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPTS — load order matters
+     1. Supabase SDK
+     2. config.js        ← lab settings & constants
+     3. modules/db.js    ← database helpers
+     4. modules/utils.js ← shared UI helpers
+     5. modules/*.js     ← one file per feature module
+     6. modules/app.js   ← wires everything together & inits
+════════════════════════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="modules/db.js"></script>
+<script src="modules/utils.js"></script>
+<script src="modules/overview.js"></script>
+<script src="modules/members.js"></script>
+<script src="modules/meetings.js"></script>
+<script src="modules/todos.js"></script>
+<script src="modules/moments.js"></script>
+<script src="modules/mice.js"></script>
+<script src="modules/quick-access.js"></script>
+<script src="modules/freezer.js"></script>
+<script src="modules/trash.js"></script>
+<script src="modules/app.js"></script>
+
+</body>
+</html>
