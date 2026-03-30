@@ -306,9 +306,9 @@ function renderDrawerInside(layer, drawer, q) {
           Batch Edit (${selectedSlots.size} selected)
         </button>
         ${selectedSlots.size ? `<button class="btn btn-outline btn-sm" onclick="clearSelectedSlots()">Clear Selection</button>` : ''}
-        <span style="font-size:11px;color:#C0BBAF">Shift/Ctrl/Cmd + click to multi-select</span>
+        <span style="font-size:11px;color:#C0BBAF">Ctrl/Cmd + click to multi-select</span>
       </div>
-      <div style="font-size:12px;color:#8C7B6B">(view from right)</div>
+      <div style="font-size:12px;color:#8C7B6B">(Left:Front; Right:Back)</div>
     </div>
     ${legend}
     <div class="drawer-grid">${grid}</div>`;
