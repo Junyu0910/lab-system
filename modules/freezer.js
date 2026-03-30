@@ -148,7 +148,7 @@ function renderHostColorPanel() {
 function addHostColorFromInput() {
   const nameEl  = $('new-host-name');
   const colorEl = $('new-host-color');
-@@ -170,148 +221,266 @@ function renderFreezer() {
+@@ -170,148 +221,267 @@ function renderFreezer() {
   const srEl = $('freezer-search-results');
   if (q) {
     const hits = state.freezer.filter(s => slotMatch(s, q));
@@ -187,8 +187,9 @@ function parseSlotKey(key) {
 }
 
 function handleDrawerCellClick(layer, drawer, row, col, e) {
+  const evt = e || window.event || {};
   const key = slotKey(layer, drawer, row, col);
-  if (e?.shiftKey || e?.ctrlKey || e?.metaKey) {
+  if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
     if (selectedSlots.has(key)) selectedSlots.delete(key);
     else selectedSlots.add(key);
     renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
@@ -251,7 +252,7 @@ function renderDrawerInside(layer, drawer, q) {
       const selected = selectedSlots.has(key);
 
       grid += `
-        <div class="drawer-cell ${filled ? 'filled' : ''} ${hit ? 'match' : ''}" style="${cellStyle}${selected ? ';box-shadow:0 0 0 2px #1A1410 inset, 0 0 0 2px #1A141055' : ''}" onclick="handleDrawerCellClick(${layer},${drawer},${row},${col},event)">
+        <div class="drawer-cell ${filled ? 'filled' : ''} ${hit ? 'match' : ''}" style="${cellStyle}${selected ? ';box-shadow:0 0 0 2px #1A1410 inset, 0 0 0 2px #1A141055' : ''}" onclick="handleDrawerCellClick(${layer},${drawer},${row},${col})">
           <div class="dc-pos">R${row}C${col}</div>
           <div class="dc-label">${sl?.label || ''}</div>
           <div class="dc-sub">${sl?.tissue || ''}${sl?.project ? ' · ' + sl.project : ''}</div>
