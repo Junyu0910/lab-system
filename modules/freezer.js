@@ -1,44 +1,72 @@
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  modules/freezer.js — -80°C Freezer tab                     ║
 // ║  Layout dimensions configured in config.js                  ║
-// ║  Host colors & drawer colors stored in localStorage         ║
+// ║  Host colors & drawer colors are shared via Supabase        ║
 // ╚══════════════════════════════════════════════════════════════╝
 
 let currentDrawer = null;
 
-// ── Drawer color helpers ──────────────────────────────────────────────────────
-function getDrawerColor(layer, drawer) {
-  return localStorage.getItem(`xulab_dcolor_${layer}_${drawer}`) || null;
+// ── Drawer color helpers (shared) ─────────────────────────────────────────────
+function getDrawerColorRecord(layer, drawer) {
+  return state.freezerDrawerColors.find(d => d.layer == layer && d.drawer == drawer) || null;
 }
-function setDrawerColor(layer, drawer, color) {
-  localStorage.setItem(`xulab_dcolor_${layer}_${drawer}`, color);
-  renderFreezer();
+function getDrawerColor(layer, drawer) {
+  return getDrawerColorRecord(layer, drawer)?.color || null;
+}
+async function setDrawerColor(layer, drawer, color) {
+  const existing = getDrawerColorRecord(layer, drawer);
+  if (existing) {
+    if (sb) await sbUpdate('freezer_drawer_colors', existing.id, { color });
+    existing.color = color;
+  } else {
+    const row = { id: uid(), layer, drawer, color };
+    if (sb) await sbInsert('freezer_drawer_colors', row);
+    state.freezerDrawerColors.push(row);
+  }
+  if (currentDrawer) renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
+  else renderFreezer();
+}
+async function clearDrawerColor(layer, drawer) {
+  const existing = getDrawerColorRecord(layer, drawer);
+  if (!existing) return;
+  if (sb) await sbDelete('freezer_drawer_colors', existing.id);
+  state.freezerDrawerColors = state.freezerDrawerColors.filter(d => d.id !== existing.id);
+  if (currentDrawer) renderDrawerInside(layer, drawer, ($('freezer-search')?.value || '').toLowerCase().trim());
+  else renderFreezer();
 }
 
-// ── Host color helpers ────────────────────────────────────────────────────────
-// Stored as JSON: { "Alex": "#4D96FF", "Sarah": "#FF7E5F" }
+// ── Host color helpers (shared) ───────────────────────────────────────────────
 function getHostColors() {
-  try { return JSON.parse(localStorage.getItem('xulab_hostcolors') || '{}'); } catch { return {}; }
+  return (state.freezerHostColors || []).reduce((acc, item) => {
+    if (item?.name && item?.color) acc[item.name] = item.color;
+    return acc;
+  }, {});
 }
-function saveHostColors(map) {
-  localStorage.setItem('xulab_hostcolors', JSON.stringify(map));
+function getHostColorRecord(hostName) {
+  if (!hostName) return null;
+  return state.freezerHostColors.find(h => h.name && h.name.toLowerCase() === hostName.toLowerCase()) || null;
 }
 function getHostColor(hostName) {
-  if (!hostName) return null;
-  const map = getHostColors();
-  const key = Object.keys(map).find(k => k.toLowerCase() === hostName.toLowerCase());
-  return key ? map[key] : null;
+return getHostColorRecord(hostName)?.color || null;
 }
-function setHostColor(name, color) {
-  const map = getHostColors();
-  map[name] = color;
-  saveHostColors(map);
+async function setHostColor(name, color) {
+  const existing = getHostColorRecord(name);
+  if (existing) {
+    if (sb) await sbUpdate('freezer_host_colors', existing.id, { name, color });
+    existing.name = name;
+    existing.color = color;
+  } else {
+    const row = { id: uid(), name, color };
+    if (sb) await sbInsert('freezer_host_colors', row);
+    state.freezerHostColors.push(row);
+  }
   renderFreezer();
 }
-function removeHostColor(name) {
-  const map = getHostColors();
-  delete map[name];
-  saveHostColors(map);
+async function removeHostColor(name) {
+  const existing = getHostColorRecord(name);
+  if (!existing) return;
+  if (sb) await sbDelete('freezer_host_colors', existing.id);
+  state.freezerHostColors = state.freezerHostColors.filter(h => h.id !== existing.id);
   renderFreezer();
 }
 
@@ -250,7 +278,7 @@ function renderDrawerInside(layer, drawer, q) {
         <input type="color" id="drawer-color-inside" value="${dColor || '#4D96FF'}"
           style="width:28px;height:22px;border:none;border-radius:5px;cursor:pointer;background:transparent;padding:1px"
           onchange="setDrawerColor(${layer},${drawer},this.value)">
-        ${dColor ? `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 8px" onclick="localStorage.removeItem('xulab_dcolor_${layer}_${drawer}');renderDrawerInside(${layer},${drawer},'')">✕ Remove</button>` : ''}
+       ${dColor ? `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 8px" onclick="clearDrawerColor(${layer},${drawer})">✕ Remove</button>` : ''}
       </div>
       <div style="font-size:12px;color:#8C7B6B">(view from right)</div>
     </div>
