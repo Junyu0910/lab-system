@@ -129,7 +129,7 @@ function renderDrawerInside(layer, drawer, q) {
           onchange="setDrawerColor(${layer},${drawer},this.value)">
         ${dColor ? `<button class="btn btn-outline btn-sm" style="font-size:10px;padding:3px 8px" onclick="localStorage.removeItem('xulab_dcolor_${layer}_${drawer}');renderDrawerInside(${layer},${drawer},'')">✕ Remove</button>` : ''}
       </div>
-      <div style="font-size:12px;color:#8C7B6B">(view from right)</div>
+      <div style="font-size:12px;color:#8C7B6B">(Left: Front; Right: Back)</div>
     </div>
     <div class="drawer-grid">${grid}</div>`;
 }
