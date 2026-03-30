@@ -10,8 +10,8 @@ const LAB_SUB      = 'MIBAM UMN';
 const LAB_PASSWORD = 'xulab2024';
 
 // ── Supabase Connection ───────────────────────────────────────────────────────
-const SB_URL = 'https://cmadqjpqfsmgpohawzkz.supabase.co';
-const SB_KEY = 'sb_publishable_lUfLjrtk1n_fHIoTLkjj2w_yMwI-6T-';
+const SB_URL = 'https://lxufubqhudmdfbxgcyvp.supabase.co';
+const SB_KEY = 'sb_publishable_MztHegfuYTak05sCaLr8bA_k8j0MdBk';
 
 // ── Quick Access Links ────────────────────────────────────────────────────────
 // To add a link: copy one block and change the values.
