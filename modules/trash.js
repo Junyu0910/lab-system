@@ -3,6 +3,8 @@
 // ╚══════════════════════════════════════════════════════════════╝
 
 const TICON = { meeting: '📋', todo: '✅', log: '✨', member: '👥', mouse: '🐭', strain: '🧬' };
+let trashPage = 1;
+function setTrashPage(p) { trashPage = p; renderTrash(); }
 
 function renderTrash() {
   const trash = state.trash;
@@ -11,9 +13,11 @@ function renderTrash() {
     ? (badge.textContent = trash.length, badge.classList.remove('hidden'))
     : badge.classList.add('hidden');
 
-  $('trash-list').innerHTML = trash.length === 0
+  const pg = getPage(trash, trashPage); trashPage = pg.page;
+
+  $('trash-list').innerHTML = (trash.length === 0
     ? '<div class="empty-state">Trash is empty 🎉</div>'
-    : trash.map(t => {
+    : pg.items.map(t => {
         const item  = t.item || {};
         const label = item.name || item.title || item.text || item.cageNo || item.cage_no || item.content?.substring(0, 40) || '(item)';
         return `
@@ -29,10 +33,12 @@ function renderTrash() {
             <button class="btn btn-outline btn-sm" onclick="restoreItem('${t.id}','${t.type}')">↩ Restore</button>
             <button class="del-btn" onclick="permDelete('${t.id}','${t.type}')">✕</button>
           </div>`;
-      }).join('');
+      }).join(''))
+    + pagerHTML(pg.page, pg.pages, 'setTrashPage');
 }
 
 async function trashItem(type, id) {
+  if (!confirm(`Move this ${type} to trash?`)) return; 
   const tmap = { meeting: 'meetings', todo: 'todos', log: 'logs', member: 'members', mouse: 'mice', strain: 'strains' };
   const src  = state[tmap[type]]; const item = src?.find(x => x.id == id); if (!item) return;
   const deletedAt = new Date().toLocaleDateString('en-US');
