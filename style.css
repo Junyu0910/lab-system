@@ -96,6 +96,12 @@ input:focus,textarea:focus,select:focus{border-color:#C0BBAF;background:#F5F2EC}
 .toast{position:fixed;bottom:28px;right:28px;background:#1A1410;color:#F5F0E8;border-radius:10px;padding:11px 18px;font-size:13px;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;display:flex;align-items:center;gap:8px}
 .toast.show{opacity:1}
 .hidden{display:none!important}
+/* Pagination */
+.pager{display:flex;align-items:center;gap:10px;justify-content:center;padding:18px 0 4px}
+.pager-btn{border:1.5px solid #D9CFBF;background:#fff;color:#5C4D3C;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.pager-btn:hover:not([disabled]){background:#F0EBE2}
+.pager-btn[disabled]{opacity:.4;cursor:default}
+.pager-info{font-size:12px;color:#8C7B6B;font-weight:600}
 /* Freezer */
 .freezer-drawers{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px}
 .freezer-drawer{background:#fff;border-radius:12px;border:2px solid #EDE8E0;padding:12px;cursor:pointer;transition:all .15s;min-height:90px;position:relative}
