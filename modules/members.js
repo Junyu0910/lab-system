@@ -1,12 +1,16 @@
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  modules/members.js — Lab Members tab                       ║
 // ╚══════════════════════════════════════════════════════════════╝
-
+let membersPage = 1;
+function setMembersPage(p) { membersPage = p; renderMembers(); }
+ 
 function renderMembers() {
+  const pg = getPage(state.members, membersPage);
+  membersPage = pg.page;
   $('members-sub').textContent = state.members.length + ' member' + (state.members.length !== 1 ? 's' : '');
-  $('member-grid').innerHTML = state.members.length === 0
+  $('member-grid').innerHTML = (state.members.length === 0
     ? '<div class="empty-state">No members yet. Add the first one!</div>'
-    : state.members.map(m => `
+    : pg.items.map(m => `
         <div class="card card-hover" style="padding:20px;cursor:pointer" onclick="showMember('${m.id}')">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
             <div class="m-avatar" style="background:${m.color || '#E8C547'}">${m.avatar || '?'}</div>
@@ -22,7 +26,8 @@ function renderMembers() {
             <div style="display:flex;align-items:center;gap:7px;font-size:11px;color:#5C4D3C"><span>📞</span>${m.phone || '—'}</div>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:5px">${(m.projects || []).map(p => `<span class="m-tag">${p}</span>`).join('')}</div>
-        </div>`).join('');
+        </div>`).join(''))
+    + pagerHTML(pg.page, pg.pages, 'setMembersPage');
 }
 
 function showMember(id) {
