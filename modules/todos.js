@@ -10,11 +10,16 @@ function setNewPrio(p) {
   });
 }
 
+let todoPendingPage = 1;
+let todoDonePage    = 1;
+function setTodoPendingPage(p) { todoPendingPage = p; renderTodos(); }
+function setTodoDonePage(p)    { todoDonePage    = p; renderTodos(); }
+ 
 function renderTodos() {
   const pending = state.todos.filter(t => !t.done);
   const done    = state.todos.filter(t =>  t.done);
   $('todos-sub').textContent = `${pending.length} pending · ${done.length} done`;
-
+ 
   const ri = t => `
     <div class="todo-item ${t.done ? 'done' : ''}">
       <div class="todo-check" onclick="toggleTodo('${t.id}',${!t.done})">${t.done ? '✓' : ''}</div>
@@ -26,10 +31,14 @@ function renderTodos() {
       <button class="edit-btn" onclick="editTodo('${t.id}')">✏️</button>
       <button class="del-btn"  onclick="trashItem('todo','${t.id}')">🗑</button>
     </div>`;
-
+ 
+  const pgP = getPage(pending, todoPendingPage); todoPendingPage = pgP.page;
+  const pgD = getPage(done,    todoDonePage);    todoDonePage    = pgD.page;
+ 
   $('todo-list').innerHTML =
-    (pending.length ? pending.map(ri).join('') : '<div class="empty-state" style="padding:20px">All caught up! 🎉</div>') +
-    (done.length ? `<div class="section-divider">Completed</div>${done.map(ri).join('')}` : '');
+    (pending.length ? pgP.items.map(ri).join('') + pagerHTML(pgP.page, pgP.pages, 'setTodoPendingPage')
+                    : '<div class="empty-state" style="padding:20px">All caught up! 🎉</div>') +
+    (done.length ? `<div class="section-divider">Completed</div>${pgD.items.map(ri).join('')}${pagerHTML(pgD.page, pgD.pages, 'setTodoDonePage')}` : '');
 }
 
 async function addTodo() {
