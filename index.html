@@ -460,9 +460,10 @@
     </div>
     <div class="form-group"><label class="form-label">Cage Numbers (comma or newline separated)</label><textarea id="mc-cagenos" rows="2" placeholder="e.g. A-001, A-002&#10;Leave blank to auto-label"></textarea></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="mc-mu" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="mc-mu" placeholder="0" min="0" oninput="updateMuNotes('mc')"></div>
       <div class="form-group"><label class="form-label">Exp. Cages Used</label><input type="number" id="mc-exp" placeholder="0" min="0"></div>
     </div>
+    <div id="mc-unit-notes"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">♀ Female Count</label><input type="number" id="mc-female" placeholder="0" min="0"></div>
       <div class="form-group"><label class="form-label">♂ Male Count</label><input type="number" id="mc-male" placeholder="0" min="0"></div>
@@ -472,10 +473,10 @@
       <div class="form-group"><label class="form-label">Project Tag *</label><input type="text" id="mc-ptag" placeholder="e.g. NSFC-2024"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Age (months, 0–30)</label><input type="number" id="mc-age" placeholder="e.g. 6" min="0" max="30"></div>
-      <div class="form-group"><label class="form-label">Notes</label><input type="text" id="mc-notes" placeholder="Tumor model, control group…"></div>
+      <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" id="mc-dob" oninput="autoAge('mc')"></div>
+      <div class="form-group"><label class="form-label">Age (months) — auto if DOB set</label><input type="number" id="mc-age" placeholder="e.g. 6" min="0" max="30"></div>
     </div>
-    <div class="modal-footer">
+    <div class="form-group"><label class="form-label">Notes</label><input type="text" id="mc-notes" placeholder="Tumor model, control group…"></div>
       <button class="btn btn-outline" onclick="closeModal('add-mouse-modal')">Cancel</button>
       <button class="btn btn-dark"    onclick="addMouse()">Add Record</button>
     </div>
@@ -493,9 +494,10 @@
     </div>
     <div class="form-group"><label class="form-label">Cage Numbers</label><textarea id="ems-cagenos" rows="2"></textarea></div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="ems-mu" placeholder="0" min="0"></div>
+      <div class="form-group"><label class="form-label">Mating Units</label><input type="number" id="ems-mu" placeholder="0" min="0" oninput="updateMuNotes('ems')"></div>
       <div class="form-group"><label class="form-label">Exp. Cages Used</label><input type="number" id="ems-exp" placeholder="0" min="0"></div>
     </div>
+    <div id="ems-unit-notes"></div>
     <div class="form-row">
       <div class="form-group"><label class="form-label">♀ Female Count</label><input type="number" id="ems-female" placeholder="0" min="0"></div>
       <div class="form-group"><label class="form-label">♂ Male Count</label><input type="number" id="ems-male" placeholder="0" min="0"></div>
@@ -505,10 +507,10 @@
       <div class="form-group"><label class="form-label">Project Tag *</label><input type="text" id="ems-ptag"></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Age (months, 0–30)</label><input type="number" id="ems-age" placeholder="e.g. 6" min="0" max="30"></div>
-      <div class="form-group"><label class="form-label">Notes</label><input type="text" id="ems-notes"></div>
+      <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" id="ems-dob" oninput="autoAge('ems')"></div>
+      <div class="form-group"><label class="form-label">Age (months) — auto if DOB set</label><input type="number" id="ems-age" placeholder="e.g. 6" min="0" max="30"></div>
     </div>
-    <div class="modal-footer">
+    <div class="form-group"><label class="form-label">Notes</label><input type="text" id="ems-notes"></div>
       <button class="btn btn-outline" onclick="closeModal('edit-mouse-modal')">Cancel</button>
       <button class="btn btn-dark"    onclick="saveMouse()">Save Changes</button>
     </div>
