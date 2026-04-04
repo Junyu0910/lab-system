@@ -3,9 +3,12 @@
 // ╚══════════════════════════════════════════════════════════════╝
 
 let activeTagFilter = '';
-
+let meetingsPage = 1;
+function setMeetingsPage(p) { meetingsPage = p; renderMeetings(); }
+ 
 function setTagFilter(tag) {
   activeTagFilter = tag;
+  meetingsPage = 1;
   document.querySelectorAll('[id^="tag-filter-"]').forEach(b => b.classList.remove('active'));
   const btn = tag
     ? document.getElementById('tag-filter-' + tag.replace(/[^a-zA-Z0-9]/g, '_'))
@@ -27,9 +30,12 @@ function renderMeetings() {
   $('meetings-sub').textContent = state.meetings.length + ' record' + (state.meetings.length !== 1 ? 's' : '') +
     (activeTagFilter ? ` · filtered by "${activeTagFilter}"` : '');
 
-  $('meeting-list').innerHTML = filtered.length === 0
+  const pg = getPage(filtered, meetingsPage);
+  meetingsPage = pg.page;
+ 
+  $('meeting-list').innerHTML = (filtered.length === 0
     ? '<div class="empty-state">No meetings recorded yet.</div>'
-    : filtered.map(m => `
+    : pg.items.map(m => `
         <div class="card card-hover meeting-card" onclick="showMeeting('${m.id}')">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
             <div>
@@ -43,7 +49,8 @@ function renderMeetings() {
           </div>
           ${m.summary ? `<p style="color:#5C4D3C;font-size:13px;line-height:1.6;margin-bottom:10px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${m.summary}</p>` : ''}
           <div style="display:flex;gap:6px;flex-wrap:wrap">${(m.tags || []).map(t => `<span class="tag-chip">${t}</span>`).join('')}</div>
-        </div>`).join('');
+        </div>`).join(''))
+    + pagerHTML(pg.page, pg.pages, 'setMeetingsPage');
 }
 
 function showMeeting(id) {
