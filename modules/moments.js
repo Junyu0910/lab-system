@@ -3,22 +3,28 @@
 // ║  Types are configured in config.js → MOMENT_TYPES           ║
 // ╚══════════════════════════════════════════════════════════════╝
 
+let logsPage = 1;
+function setLogsPage(p) { logsPage = p; renderLogs(); }
+ 
 function setLogFilter(f) {
   logFilter = f;
+  logsPage  = 1;
   // 'all' + all keys in MOMENT_TYPES
   ['all', ...Object.keys(MOMENT_TYPES)].forEach(x => {
     const el = $('lf-' + x); if (el) el.classList.toggle('active', x === f);
   });
   renderLogs();
 }
-
+ 
 function renderLogs() {
   const logs = logFilter === 'all' ? state.logs : state.logs.filter(l => l.type === logFilter);
   $('logs-sub').textContent = state.logs.length + ' moment' + (state.logs.length !== 1 ? 's' : '');
-
-  $('log-list').innerHTML = logs.length === 0
+ 
+  const pg = getPage(logs, logsPage); logsPage = pg.page;
+ 
+  $('log-list').innerHTML = (logs.length === 0
     ? '<div class="empty-state">No moments yet. Add your first one!</div>'
-    : [...logs].map(l => {
+    : pg.items.map(l => {
         const m    = MOMENT_TYPES[l.type] || MOMENT_TYPES.note;
         const icon = m.icon;
         return `
