@@ -43,7 +43,8 @@ function renderLogs() {
             </div>
             <div style="font-size:13px;color:#1A1410;line-height:1.7;white-space:pre-wrap">${l.content}</div>
           </div>`;
-      }).join('');
+      }).join(''))
+    + pagerHTML(pg.page, pg.pages, 'setLogsPage');
 }
 
 async function addLog() {
