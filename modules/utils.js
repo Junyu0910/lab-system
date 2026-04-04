@@ -56,7 +56,7 @@ const LAB_PW_KEY = 'xulab_auth';
 function checkPW() {
   const v = $('pw-input').value;
   if (v === LAB_PASSWORD) {
-    sessionStorage.setItem(LAB_PW_KEY, '1');
+    localStorage.setItem(LAB_PW_KEY, '1');
     const o = $('pw-overlay');
     o.style.transition = 'opacity .4s'; o.style.opacity = '0';
     setTimeout(() => o.remove(), 400);
@@ -68,10 +68,26 @@ function checkPW() {
     setTimeout(() => { i.classList.remove('error'); e.textContent = ''; }, 1500);
   }
 }
-if (sessionStorage.getItem(LAB_PW_KEY) === '1') {
+if (localStorage.getItem(LAB_PW_KEY) === '1') {
   document.addEventListener('DOMContentLoaded', () => {
     const o = $('pw-overlay'); if (o) o.remove();
   });
+}
+
+// ── Pagination helper ─────────────────────────────────────────────────────────
+const PAGE_SIZE = 15;
+function pagerHTML(page, pages, fn) {
+  if (pages <= 1) return '';
+  return `<div class="pager">
+    <button class="pager-btn" ${page <= 1 ? 'disabled' : ''} onclick="${fn}(${page - 1})">‹ Prev</button>
+    <span class="pager-info">Page ${page} of ${pages}</span>
+    <button class="pager-btn" ${page >= pages ? 'disabled' : ''} onclick="${fn}(${page + 1})">Next ›</button>
+  </div>`;
+}
+function getPage(items, page) {
+  const pages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const p = Math.min(Math.max(1, page), pages);
+  return { items: items.slice((p - 1) * PAGE_SIZE, p * PAGE_SIZE), page: p, pages };
 }
 
 // Welcome overlay — dismiss on click or any keypress
